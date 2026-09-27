@@ -1,0 +1,6 @@
+{
+  "name": "Kimana Cluster Tracker",
+  "description": "A comprehensive, mobile-first community development tracker for the Bahá'í community in the Kimana Cluster.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
