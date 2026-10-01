@@ -100,7 +100,7 @@ export const JuniorYouthView: React.FC = () => {
     e.preventDefault();
     const loc = localities.find(l => l.id === formData.localityId) || localities[0];
     const locName = loc ? loc.name : 'Kimana Town';
-    const membersArray = formData.members.split(',').map(s => s.trim()).filter(Boolean);
+    const membersArray = formData.members.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
     const projectsArray = formData.serviceProjects.split(',').map(s => s.trim()).filter(Boolean);
 
     if (editingGroup) {
@@ -440,14 +440,50 @@ export const JuniorYouthView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Members (Comma separated)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                    Multiple Members (Enter multiple at once)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSelectedTargetGroup(editingGroup || null);
+                      setIsMultiModalOpen(true);
+                    }}
+                    className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Open Multi-Person Form (with parents & ages)</span>
+                  </button>
+                </div>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={formData.members}
-                  onChange={e => setFormData({ ...formData, members: e.target.value })}
-                  placeholder="Moses Metian, Ruth Naipanoi, Timothy Keti"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  onChange={e => {
+                    const val = e.target.value;
+                    const parsed = val.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      members: val,
+                      averageAttendance: Math.max(prev.averageAttendance, parsed.length)
+                    }));
+                  }}
+                  placeholder="Enter or paste multiple member names (separated by commas or new lines)&#10;e.g.:&#10;Moses Metian&#10;Ruth Naipanoi&#10;Timothy Keti"
+                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs transition leading-relaxed shadow-sm resize-y"
                 />
+                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>
+                    {formData.members.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length > 0 ? (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ✓ {formData.members.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length} members entered (auto-calculates group stats)
+                      </span>
+                    ) : (
+                      'Supports entering multiple people at once (comma or line separated)'
+                    )}
+                  </span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Multiple entry enabled</span>
+                </div>
               </div>
 
               <div>

@@ -2,14 +2,13 @@ import React from 'react';
 import { 
   LayoutDashboard, MapPin, Users, CalendarCheck, BookOpen, 
   Sparkles, GraduationCap, HeartHandshake, Home, PlaneTakeoff, 
-  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings,
-  ArrowDownRight, ArrowUpRight
+  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, followUps, friendsComingIn, friendsGoingOut } = useApp();
+  const { activeTab, setActiveTab, followUps } = useApp();
 
   const pendingFollowUps = followUps.filter(f => f.status === 'Pending' || f.status === 'In Progress').length;
 
@@ -17,8 +16,6 @@ export const Sidebar: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'localities', label: 'Localities', icon: MapPin },
     { id: 'people', label: 'People / Friends', icon: Users },
-    { id: 'friendscomingin', label: 'Friends Coming In', icon: ArrowDownRight, badge: friendsComingIn.length },
-    { id: 'friendsgoingout', label: 'Friends Going Out', icon: ArrowUpRight, badge: friendsGoingOut.length },
     { id: 'activities', label: 'Activities', icon: CalendarCheck },
     { id: 'studycircles', label: 'Study Circles', icon: BookOpen },
     { id: 'childrensclasses', label: 'Children\'s Classes', icon: Sparkles },

@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import { 
   X, Home, HeartHandshake, UserPlus, CalendarCheck, 
-  BookOpen, Sparkles, GraduationCap, CheckCircle 
+  BookOpen, Sparkles, GraduationCap, CheckCircle, Users
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 interface QuickRecordModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenMultiEntry?: () => void;
 }
 
-export const QuickRecordModal: React.FC<QuickRecordModalProps> = ({ isOpen, onClose }) => {
+export const QuickRecordModal: React.FC<QuickRecordModalProps> = ({ isOpen, onClose, onOpenMultiEntry }) => {
   const { 
     localities, people, addHomeVisit, addDevotional, 
     addNewBahai, addActivity, addFollowUp 
@@ -249,6 +250,26 @@ export const QuickRecordModal: React.FC<QuickRecordModalProps> = ({ isOpen, onCl
                 <span>Activity</span>
               </button>
             </div>
+
+            {/* Multi-Person Entry Shortcut Banner */}
+            {onOpenMultiEntry && (
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
+                  <Users className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+                  <span>Entering multiple people at once?</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenMultiEntry();
+                  }}
+                  className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm transition whitespace-nowrap"
+                >
+                  Use Multi-Person Form ➔
+                </button>
+              </div>
+            )}
 
             {/* Locality Selector */}
             <div>

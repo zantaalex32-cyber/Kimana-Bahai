@@ -111,7 +111,7 @@ export const StudyCirclesView: React.FC = () => {
     e.preventDefault();
     const loc = localities.find(l => l.id === formData.localityId) || localities[0];
     const locName = loc ? loc.name : 'Kimana Town';
-    const partsArray = formData.participants.split(',').map(s => s.trim()).filter(Boolean);
+    const partsArray = formData.participants.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
 
     if (editingCircle) {
       updateStudyCircle(editingCircle.id, {
@@ -457,14 +457,42 @@ export const StudyCirclesView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1">Participants (Comma separated)</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                    Multiple Participants (Enter multiple at once)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSelectedTargetCircle(editingCircle || null);
+                      setIsMultiModalOpen(true);
+                    }}
+                    className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Open Multi-Person Form (with books & contacts)</span>
+                  </button>
+                </div>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={formData.participants}
                   onChange={e => setFormData({ ...formData, participants: e.target.value })}
-                  placeholder="Emmanuel Kibet, Faith Naipanoi, Samuel Kitiyo"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  placeholder="Enter or paste multiple participant names (separated by commas or new lines)&#10;e.g.:&#10;Emmanuel Kibet&#10;Faith Naipanoi&#10;Samuel Kitiyo"
+                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs transition leading-relaxed shadow-sm resize-y"
                 />
+                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>
+                    {formData.participants.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length > 0 ? (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ✓ {formData.participants.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length} participants entered (auto-calculates group stats)
+                      </span>
+                    ) : (
+                      'Supports entering multiple people at once (comma or line separated)'
+                    )}
+                  </span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Multiple entry enabled</span>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

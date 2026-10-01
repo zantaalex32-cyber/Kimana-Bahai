@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   X, UserPlus, Trash2, Plus, Users, Sparkles, GraduationCap, 
   BookOpen, ArrowDownRight, ArrowUpRight, CheckCircle2, AlertCircle,
-  HelpCircle, Copy, FileSpreadsheet
+  HelpCircle, Copy, FileSpreadsheet, HeartHandshake
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -10,6 +10,7 @@ export type EntryCategory =
   | 'children'
   | 'junioryouth'
   | 'studycircles'
+  | 'devotionals'
   | 'friendscomingin'
   | 'friendsgoingout'
   | 'people';
@@ -54,7 +55,7 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
   targetGroupName
 }) => {
   const { 
-    localities, childrenClasses, juniorYouthGroups, studyCircles,
+    localities, childrenClasses, juniorYouthGroups, studyCircles, devotionals,
     batchAddFriendsComingIn, batchAddFriendsGoingOut, batchAddPeople,
     batchAddParticipantsToGroup, userRole
   } = useApp();
@@ -245,6 +246,23 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
         notes: `Course: ${p.bookOrCourse || 'Ruhi Institute'}. Age: ${p.age || 'N/A'}. ${p.notes || ''}`,
         dateAdded: p.date || new Date().toISOString().split('T')[0]
       })));
+    } else if (category === 'devotionals') {
+      const names = queue.map(p => p.fullName);
+      if (selectedGroupId) {
+        batchAddParticipantsToGroup('devotionals', selectedGroupId, names);
+      }
+      batchAddPeople(queue.map(p => ({
+        name: p.fullName,
+        localityId: selectedLocalityId,
+        localityName: locName,
+        phone: p.contact || '',
+        role: 'Participant',
+        status: 'Active',
+        activitiesServed: ['Devotional Meetings'],
+        groupsServed: [selectedGroupId ? (devotionals.find(d => d.id === selectedGroupId)?.title || 'Devotional Meeting') : 'Devotional Meeting'],
+        notes: `Devotional participant. Age: ${p.age || 'N/A'}. ${p.notes || ''}`,
+        dateAdded: p.date || new Date().toISOString().split('T')[0]
+      })));
     } else if (category === 'friendscomingin') {
       batchAddFriendsComingIn(queue.map(p => ({
         fullName: p.fullName,
@@ -346,6 +364,7 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
             { id: 'children', label: "Children's Class", icon: Sparkles },
             { id: 'junioryouth', label: 'Junior Youth', icon: GraduationCap },
             { id: 'studycircles', label: 'Study Circle', icon: BookOpen },
+            { id: 'devotionals', label: 'Devotional Meeting', icon: HeartHandshake },
             { id: 'friendscomingin', label: 'Friends Coming In', icon: ArrowDownRight },
             { id: 'friendsgoingout', label: 'Friends Going Out', icon: ArrowUpRight },
             { id: 'people', label: 'Community Participants', icon: Users },
@@ -391,7 +410,7 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
             </select>
           </div>
 
-          {(category === 'children' || category === 'junioryouth' || category === 'studycircles') && (
+          {(category === 'children' || category === 'junioryouth' || category === 'studycircles' || category === 'devotionals') && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Target Group / Roster (Optional):
@@ -415,6 +434,11 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
                 {category === 'studycircles' && studyCircles.map(s => (
                   <option key={s.id} value={s.id}>
                     {s.groupName} - {s.tutorName} ({s.bookMaterial})
+                  </option>
+                ))}
+                {category === 'devotionals' && devotionals.map(d => (
+                  <option key={d.id} value={d.id}>
+                    {d.title} - Host: {d.hostName} ({d.localityName})
                   </option>
                 ))}
               </select>
@@ -445,7 +469,7 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
               <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>Enter Person Details</span>
                 <span className="text-xs font-normal text-slate-400">
-                  (Category: {category === 'children' ? "Children's Class" : category === 'junioryouth' ? 'Junior Youth' : category === 'studycircles' ? 'Study Circle' : category === 'friendscomingin' ? 'Friends Coming In' : category === 'friendsgoingout' ? 'Friends Going Out' : 'Community'})
+                  (Category: {category === 'children' ? "Children's Class" : category === 'junioryouth' ? 'Junior Youth' : category === 'studycircles' ? 'Study Circle' : category === 'devotionals' ? 'Devotional Meeting' : category === 'friendscomingin' ? 'Friends Coming In' : category === 'friendsgoingout' ? 'Friends Going Out' : 'Community'})
                 </span>
               </h3>
 
@@ -668,6 +692,52 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
                 </>
               )}
 
+              {/* Devotional participants specific fields */}
+              {category === 'devotionals' && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Contact Information (Phone)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +254 712 345678"
+                      value={currentPerson.contact || ''}
+                      onChange={(e) => setCurrentPerson({ ...currentPerson, contact: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Neighborhood / Area
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Near Kimana Junction"
+                      value={currentPerson.neighborhood || ''}
+                      onChange={(e) => setCurrentPerson({ ...currentPerson, neighborhood: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Participation Role / Status
+                    </label>
+                    <select
+                      value={currentPerson.status || 'Active'}
+                      onChange={(e) => setCurrentPerson({ ...currentPerson, status: e.target.value })}
+                      className="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    >
+                      <option value="Active">Regular Participant</option>
+                      <option value="New">New Friend</option>
+                      <option value="Returning">Returning Friend</option>
+                      <option value="Host / Reader">Host / Reader</option>
+                      <option value="Visiting">Visiting Friend</option>
+                    </select>
+                  </div>
+                </>
+              )}
+
               {/* Friends Coming In specific fields */}
               {category === 'friendscomingin' && (
                 <>
@@ -881,6 +951,7 @@ export const MultiPersonEntryModal: React.FC<MultiPersonEntryModalProps> = ({
                             {category === 'children' && (person.classOrGrade || 'Grade 1')}
                             {category === 'junioryouth' && (person.status || 'Active')}
                             {category === 'studycircles' && (person.bookOrCourse || 'Ruhi Book 1')}
+                            {category === 'devotionals' && (person.status || 'Participant')}
                             {category === 'friendscomingin' && `${person.howReached} • ${person.status}`}
                             {category === 'friendsgoingout' && `To: ${person.newLocation} (${person.reason})`}
                             {category === 'people' && (person.notes || 'Community Member')}

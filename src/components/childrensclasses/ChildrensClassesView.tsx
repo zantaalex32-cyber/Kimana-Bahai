@@ -24,6 +24,12 @@ export const ChildrensClassesView: React.FC = () => {
   // Expanded roster accordion per class ID
   const [expandedRosterId, setExpandedRosterId] = useState<string | null>(null);
 
+  // Multi-person inline entry state for class form
+  const [useMultiPersonList, setUseMultiPersonList] = useState(true);
+  const [newChildName, setNewChildName] = useState('');
+  const [newChildAge, setNewChildAge] = useState('');
+  const [newChildParent, setNewChildParent] = useState('');
+
   const [formData, setFormData] = useState({
     className: '',
     localityId: localities[0]?.id || '',
@@ -82,11 +88,44 @@ export const ChildrensClassesView: React.FC = () => {
     setIsMultiModalOpen(true);
   };
 
+  const currentChildrenList = formData.childrenNames
+    ? formData.childrenNames.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  const handleAddChildToForm = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (!newChildName.trim()) return;
+    
+    const formatted = newChildAge.trim() 
+      ? `${newChildName.trim()} (Age ${newChildAge.trim()}${newChildParent.trim() ? `, Parent: ${newChildParent.trim()}` : ''})`
+      : newChildParent.trim()
+      ? `${newChildName.trim()} (Parent: ${newChildParent.trim()})`
+      : newChildName.trim();
+
+    const updated = [...currentChildrenList, formatted];
+    setFormData(prev => ({
+      ...prev,
+      childrenNames: updated.join(', '),
+      averageAttendance: Math.max(prev.averageAttendance, updated.length)
+    }));
+    setNewChildName('');
+    setNewChildAge('');
+    setNewChildParent('');
+  };
+
+  const handleRemoveChildFromForm = (indexToRemove: number) => {
+    const updated = currentChildrenList.filter((_, i) => i !== indexToRemove);
+    setFormData(prev => ({
+      ...prev,
+      childrenNames: updated.join(', ')
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const loc = localities.find(l => l.id === formData.localityId) || localities[0];
     const locName = loc ? loc.name : 'Kimana Town';
-    const namesArray = formData.childrenNames.split(',').map(s => s.trim()).filter(Boolean);
+    const namesArray = formData.childrenNames.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
 
     if (editingClass) {
       updateChildrenClass(editingClass.id, {
@@ -406,16 +445,50 @@ export const ChildrensClassesView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1">
-                  Enrolled Children (Comma separated)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                    Multiple Enrolled Children (Enter multiple at once)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSelectedTargetClass(editingClass || null);
+                      setIsMultiModalOpen(true);
+                    }}
+                    className="text-xs text-emerald-600 dark:text-emerald-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Open Multi-Person Form (with parents & ages)</span>
+                  </button>
+                </div>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={formData.childrenNames}
-                  onChange={e => setFormData({ ...formData, childrenNames: e.target.value })}
-                  placeholder="Joy Naiputari, Kevin Mwangi, Amina Said"
-                  className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
+                  onChange={e => {
+                    const val = e.target.value;
+                    const parsed = val.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean);
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      childrenNames: val,
+                      averageAttendance: Math.max(prev.averageAttendance, parsed.length)
+                    }));
+                  }}
+                  placeholder="Enter or paste multiple children names (separated by commas or new lines)&#10;e.g.:&#10;Joy Naserian&#10;Faith Chebet&#10;Peter Kiprotich"
+                  className="w-full p-3 rounded-xl border border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-xs transition leading-relaxed shadow-sm resize-y"
                 />
+                <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500 dark:text-slate-400">
+                  <span>
+                    {formData.childrenNames.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length > 0 ? (
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        ✓ {formData.childrenNames.split(/[,\n;]+/).map(s => s.trim()).filter(Boolean).length} children entered (auto-calculates attendance totals)
+                      </span>
+                    ) : (
+                      'Supports entering multiple people at once (comma or line separated)'
+                    )}
+                  </span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Multiple entry enabled</span>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">

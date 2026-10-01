@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ReportPlan, ReportChallenge, ReportPioneer } from '../../types';
+import { WhatsAppShareModal, WhatsAppIcon } from './WhatsAppShareModal';
 
 export const ReportsView: React.FC = () => {
   const { 
@@ -22,6 +23,7 @@ export const ReportsView: React.FC = () => {
   } = useApp();
 
   const [copied, setCopied] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [selectedCycleId, setSelectedCycleId] = useState<string>(currentCycleId || cycles[0]?.id || 'cycle-14');
   const [activeReportSection, setActiveReportSection] = useState<string>('all'); // 'all' or section index 1..10
 
@@ -150,6 +152,98 @@ Kajiado South, Kenya
     `.trim();
   };
 
+  // Generate WhatsApp-Optimized Executive Summary (with WhatsApp markdown formatting)
+  const generateWhatsAppExecutiveSummary = () => {
+    const totalCoreActivities = activeStudyCircles.length + activeChildrenClasses.length + activeJYGroups.length + totalDevotionals;
+    const totalParticipation = totalSCParticipants + totalCCParticipants + totalJYParticipants + totalDevAttendance;
+
+    return `
+*🇰🇪 KIMANA CLUSTER — EXECUTIVE REPORT*
+*Reporting Period:* ${activeCycle?.name || 'Cycle 14'}
+*Date:* ${new Date().toLocaleDateString('en-KE')}
+---------------------------------------------
+*📊 COMMUNITY HIGHLIGHTS*
+• Total Bahá'í Population: *${totalBahais}* across *${localities.length}* localities
+• Total Core Activities: *${totalCoreActivities}*
+• Total Participation: *${totalParticipation}* friends
+
+*🌱 CORE ACTIVITIES STATUS*
+• 👶 *Children's Classes:* ${activeChildrenClasses.length} active (${Math.round((activeChildrenClasses.length / ccGoal) * 100)}% of goal) | *${totalCCParticipants}* enrolled children
+• 🎒 *Junior Youth Groups:* ${activeJYGroups.length} active (${Math.round((activeJYGroups.length / jyGoal) * 100)}% of goal) | *${totalJYParticipants}* members
+• 📖 *Study Circles:* ${activeStudyCircles.length} active (${Math.round((activeStudyCircles.length / scGoal) * 100)}% of goal) | *${totalSCParticipants}* friends studying
+• 🤲 *Devotional Meetings:* ${totalDevotionals} recorded (${Math.round((totalDevotionals / devGoal) * 100)}% of goal) | *${totalDevAttendance}* cumulative attendance
+
+*📈 EXPANSION & MOVEMENT*
+• 📥 *Friends Coming In:* ${friendsComingIn.length} new friends recorded
+• 📤 *Friends Going Out:* ${friendsGoingOut.length} outbound movements recorded
+
+*🎯 TOP PRIORITY PLANS*
+${currentPlans.slice(0, 3).map(p => `• [${p.category}] ${p.goalDescription} (By: ${p.targetDate}, Responsible: ${p.responsiblePerson})`).join('\n') || '• Continuing cycle expansion and home visits'}
+
+*⚠️ KEY CHALLENGES & NEEDS*
+${currentChallenges.slice(0, 2).map(c => `• [${c.severity} Priority] ${c.area}: ${c.description}`).join('\n') || '• No urgent blockers recorded'}
+
+---------------------------------------------
+_Generated via Kimana Cluster Tracker • Kajiado South, Kenya_
+    `.trim();
+  };
+
+  // Generate WhatsApp-Optimized Full 10-Section Report
+  const generateWhatsAppFullReport = () => {
+    return `
+*🇰🇪 KIMANA CLUSTER COMMUNITY REPORT*
+*Standard 10-Section Formal Report*
+*Reporting Period:* ${activeCycle?.name || 'Cycle 14'}
+*Date:* ${new Date().toLocaleDateString('en-KE')}
+=============================================
+
+*1️⃣ CHILDREN'S CLASSES*
+• Total Active Classes: *${activeChildrenClasses.length}* (Goal: ${ccGoal})
+• Total Children Enrolled: *${totalCCParticipants}*
+• Total Sessions Held: *${activeChildrenClasses.reduce((sum, c) => sum + c.numberOfSessions, 0)}*
+${activeChildrenClasses.map(c => `  ▫️ *${c.className}* (${c.localityName}) — Teacher: ${c.teacherName} | Level: ${c.ageGroupLevel} | Enrolled: ${c.childrenNames.length} children`).join('\n')}
+
+*2️⃣ JUNIOR YOUTH GROUPS*
+• Total Active Groups: *${activeJYGroups.length}* (Goal: ${jyGoal})
+• Total JY Members: *${totalJYParticipants}*
+${activeJYGroups.map(j => `  ▫️ *${j.groupName}* (${j.localityName}) — Animator: ${j.animatorName} | Material: ${j.currentMaterial} | Members: ${j.members.length} | Projects: ${j.serviceProjects.join(', ') || 'Active'}`).join('\n')}
+
+*3️⃣ STUDY CIRCLES*
+• Total Active Circles: *${activeStudyCircles.length}* (Goal: ${scGoal})
+• Total Enrolled Friends: *${totalSCParticipants}*
+${activeStudyCircles.map(s => `  ▫️ *${s.groupName}* (${s.localityName}) — Tutor: ${s.tutorName} | Book: ${s.bookMaterial} | Progress: ${s.progress} | Participants: ${s.participants.length}`).join('\n')}
+
+*4️⃣ DEVOTIONAL GATHERINGS*
+• Recorded Gatherings: *${totalDevotionals}* (Goal: ${devGoal})
+• Cumulative Attendance: *${totalDevAttendance}*
+${devotionals.slice(0, 8).map(d => `  ▫️ *${d.title}* (${d.localityName}) — Host: ${d.hostName} | Theme: ${d.themeTopic} | Attendance: ${d.participantsCount}`).join('\n')}${devotionals.length > 8 ? `\n  ▫️ _...and ${devotionals.length - 8} additional devotional meetings_` : ''}
+
+*5️⃣ FRIENDS COMING IN (${friendsComingIn.length})*
+${friendsComingIn.map(f => `  ▫️ *${f.fullName}* (${f.localityName}) — Reached via: ${f.howReached} | Introduced By: ${f.introducedBy} | Status: ${f.currentStatus}`).join('\n')}
+
+*6️⃣ FRIENDS GOING OUT (${friendsGoingOut.length})*
+${friendsGoingOut.map(f => `  ▫️ *${f.fullName}* (From: ${f.previousLocalityName}) -> Destination: ${f.newLocation} | Reason: ${f.reason}`).join('\n')}
+
+*7️⃣ PLANS FOR THE CYCLE*
+${currentPlans.length > 0 ? currentPlans.map(p => `  ▫️ *[${p.category}]* ${p.goalDescription} (Target: ${p.targetDate}, Responsible: ${p.responsiblePerson}, Status: ${p.status})`).join('\n') : '  ▫️ Regular expansion and reflection'}
+
+*8️⃣ CHALLENGES & NEEDS*
+${currentChallenges.length > 0 ? currentChallenges.map(c => `  ▫️ *[${c.severity} Priority - ${c.area}]* ${c.description} -> Action: ${c.proposedAction}`).join('\n') : '  ▫️ Needs regular monitoring'}
+
+*9️⃣ PIONEERS & SERVING RESOURCES*
+${reportPioneers.map(p => `  ▫️ *${p.name}* (${p.type}): From ${p.origin} to ${p.destination} | Focus: ${p.focusArea} | Period: ${p.period}`).join('\n')}
+
+*🔟 SUMMARY & LOCALITY OVERVIEW*
+• Total Localities: *${localities.length}*
+• Total Bahá'í Population: *${totalBahais}*
+• Core Activities Total: *${activeStudyCircles.length + activeChildrenClasses.length + activeJYGroups.length + totalDevotionals}*
+${localities.map(l => `  ▫️ *${l.name}:* ${l.bahaiCount} Bahá'ís | SCs: ${l.studyCirclesCount}, CCs: ${l.childrenClassesCount}, JY: ${l.juniorYouthGroupsCount}`).join('\n')}
+
+=============================================
+_Kimana Cluster Development Tracker • Kajiado South, Kenya_
+    `.trim();
+  };
+
   const handleCopySummary = () => {
     navigator.clipboard.writeText(generateFullStandardReport());
     setCopied(true);
@@ -214,6 +308,16 @@ Kajiado South, Kenya
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setIsWhatsAppModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-[#25D366] hover:bg-[#20bd5a] active:bg-[#1da850] text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition"
+            id="share-whatsapp-report-btn"
+            title="Share formatted report directly to WhatsApp"
+          >
+            <WhatsAppIcon className="w-4 h-4 fill-white" />
+            <span>Share to WhatsApp</span>
+          </button>
+
           <button
             onClick={handleCopySummary}
             className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs sm:text-sm font-medium transition"
@@ -714,14 +818,24 @@ Kajiado South, Kenya
       {/* ========================================================================= */}
       {(activeReportSection === 'all' || activeReportSection === 's10') && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-sm space-y-5 print:border-none print:shadow-none print:p-0">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 gap-2">
             <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <BarChart3 className="w-5 h-5 text-emerald-600" />
               10. Summary & Locality Matrix
             </h2>
-            <span className="text-xs font-semibold text-slate-500">
-              {totalBahais} Total Bahá’ís in Kimana Cluster
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsWhatsAppModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/30 text-xs font-semibold transition"
+                title="Share this report to WhatsApp"
+              >
+                <WhatsAppIcon className="w-3.5 h-3.5 fill-current" />
+                <span>Share to WhatsApp</span>
+              </button>
+              <span className="text-xs font-semibold text-slate-500">
+                {totalBahais} Total Bahá’ís in Kimana Cluster
+              </span>
+            </div>
           </div>
 
           {/* Goal Completion Rates */}
@@ -986,6 +1100,15 @@ Kajiado South, Kenya
           </div>
         </div>
       )}
+      {/* WhatsApp Share Modal */}
+      <WhatsAppShareModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        cycleName={activeCycle?.name || 'Cycle 14'}
+        reportDate={new Date().toLocaleDateString('en-KE')}
+        executiveText={generateWhatsAppExecutiveSummary()}
+        fullReportText={generateWhatsAppFullReport()}
+      />
     </div>
   );
 };

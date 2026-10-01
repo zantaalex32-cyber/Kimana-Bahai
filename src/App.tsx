@@ -40,7 +40,12 @@ const AppContent: React.FC = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardView onQuickRecord={() => setIsQuickRecordOpen(true)} />;
+        return (
+          <DashboardView 
+            onQuickRecord={() => setIsQuickRecordOpen(true)} 
+            onOpenMultiEntry={() => setIsMultiEntryOpen(true)} 
+          />
+        );
       case 'localities':
         return <LocalitiesView />;
       case 'people':
@@ -76,7 +81,12 @@ const AppContent: React.FC = () => {
       case 'settings':
         return <SettingsView />;
       default:
-        return <DashboardView onQuickRecord={() => setIsQuickRecordOpen(true)} />;
+        return (
+          <DashboardView 
+            onQuickRecord={() => setIsQuickRecordOpen(true)} 
+            onOpenMultiEntry={() => setIsMultiEntryOpen(true)} 
+          />
+        );
     }
   };
 
@@ -113,6 +123,10 @@ const AppContent: React.FC = () => {
         <QuickRecordModal 
           isOpen={isQuickRecordOpen}
           onClose={() => setIsQuickRecordOpen(false)}
+          onOpenMultiEntry={() => {
+            setIsQuickRecordOpen(false);
+            setIsMultiEntryOpen(true);
+          }}
         />
 
         {/* Multi-Person Data Entry Modal */}
