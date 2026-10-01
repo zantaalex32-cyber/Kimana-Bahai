@@ -1,8 +1,7 @@
 import { 
   Locality, Person, Activity, StudyCircle, ChildrenClass, 
   JuniorYouthGroup, DevotionalMeeting, HomeVisit, ServiceVisit, 
-  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole,
-  FriendComingIn, FriendGoingOut, ReportPlan, ReportChallenge, ReportPioneer
+  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole 
 } from '../types';
 import { 
   INITIAL_LOCALITIES, INITIAL_PEOPLE, INITIAL_ACTIVITIES, 
@@ -10,9 +9,7 @@ import {
   INITIAL_JUNIOR_YOUTH_GROUPS, INITIAL_DEVOTIONALS, 
   INITIAL_HOME_VISITS, INITIAL_SERVICE_VISITS, 
   INITIAL_NEW_BAHAIS, INITIAL_FOLLOW_UPS, INITIAL_CYCLES, 
-  INITIAL_AUDIT_LOGS, INITIAL_FRIENDS_COMING_IN,
-  INITIAL_FRIENDS_GOING_OUT, INITIAL_REPORT_PLANS,
-  INITIAL_REPORT_CHALLENGES, INITIAL_REPORT_PIONEERS
+  INITIAL_AUDIT_LOGS 
 } from '../data/initialData';
 
 const KEYS = {
@@ -26,39 +23,12 @@ const KEYS = {
   HOME_VISITS: 'kimana_tracker_home_visits_v1',
   SERVICE_VISITS: 'kimana_tracker_service_visits_v1',
   NEW_BAHAIS: 'kimana_tracker_new_bahais_v1',
-  FRIENDS_COMING_IN: 'kimana_tracker_friends_coming_in_v1',
-  FRIENDS_GOING_OUT: 'kimana_tracker_friends_going_out_v1',
-  REPORT_PLANS: 'kimana_tracker_report_plans_v1',
-  REPORT_CHALLENGES: 'kimana_tracker_report_challenges_v1',
-  REPORT_PIONEERS: 'kimana_tracker_report_pioneers_v1',
   FOLLOW_UPS: 'kimana_tracker_follow_ups_v1',
   CYCLES: 'kimana_tracker_cycles_v1',
   AUDIT_LOGS: 'kimana_tracker_audit_logs_v1',
   USER_ROLE: 'kimana_tracker_user_role_v1',
   CURRENT_CYCLE_ID: 'kimana_tracker_current_cycle_id_v1',
-  SECURITY_PIN_HASH: 'kimana_tracker_security_pin_hash_v1',
-  MASK_SENSITIVE_DATA: 'kimana_tracker_mask_sensitive_v1'
 };
-
-// SHA-256 for default master PIN "1844"
-const DEFAULT_PIN_HASH = '1e342f1a6f8ff5e13511ebdd651915998a7a2fa3cbb89d5f7ae109b0b457e51c';
-
-async function computeSha256(text: string): Promise<string> {
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(text);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  } catch {
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      hash = (hash << 5) - hash + text.charCodeAt(i);
-      hash |= 0;
-    }
-    return 'fallback_' + Math.abs(hash).toString(16);
-  }
-}
 
 // Helper for local storage reading/writing with fallback
 function loadFromStorage<T>(key: string, defaultValue: T): T {
@@ -155,41 +125,6 @@ export class StorageService {
     saveToStorage(KEYS.NEW_BAHAIS, items);
   }
 
-  static getFriendsComingIn(): FriendComingIn[] {
-    return loadFromStorage<FriendComingIn[]>(KEYS.FRIENDS_COMING_IN, INITIAL_FRIENDS_COMING_IN);
-  }
-  static saveFriendsComingIn(items: FriendComingIn[]): void {
-    saveToStorage(KEYS.FRIENDS_COMING_IN, items);
-  }
-
-  static getFriendsGoingOut(): FriendGoingOut[] {
-    return loadFromStorage<FriendGoingOut[]>(KEYS.FRIENDS_GOING_OUT, INITIAL_FRIENDS_GOING_OUT);
-  }
-  static saveFriendsGoingOut(items: FriendGoingOut[]): void {
-    saveToStorage(KEYS.FRIENDS_GOING_OUT, items);
-  }
-
-  static getReportPlans(): ReportPlan[] {
-    return loadFromStorage<ReportPlan[]>(KEYS.REPORT_PLANS, INITIAL_REPORT_PLANS);
-  }
-  static saveReportPlans(items: ReportPlan[]): void {
-    saveToStorage(KEYS.REPORT_PLANS, items);
-  }
-
-  static getReportChallenges(): ReportChallenge[] {
-    return loadFromStorage<ReportChallenge[]>(KEYS.REPORT_CHALLENGES, INITIAL_REPORT_CHALLENGES);
-  }
-  static saveReportChallenges(items: ReportChallenge[]): void {
-    saveToStorage(KEYS.REPORT_CHALLENGES, items);
-  }
-
-  static getReportPioneers(): ReportPioneer[] {
-    return loadFromStorage<ReportPioneer[]>(KEYS.REPORT_PIONEERS, INITIAL_REPORT_PIONEERS);
-  }
-  static saveReportPioneers(items: ReportPioneer[]): void {
-    saveToStorage(KEYS.REPORT_PIONEERS, items);
-  }
-
   static getFollowUps(): FollowUpItem[] {
     return loadFromStorage<FollowUpItem[]>(KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
   }
@@ -211,6 +146,18 @@ export class StorageService {
     saveToStorage(KEYS.AUDIT_LOGS, items);
   }
 
+  static logAction(userRole: UserRole, action: string, details: string): void {
+    const logs = this.getAuditLogs();
+    const newLog: AuditLog = {
+      id: 'log-' + Date.now(),
+      timestamp: new Date().toISOString(),
+      userRole,
+      action,
+      details
+    };
+    this.saveAuditLogs([newLog, ...logs].slice(0, 100)); // keep last 100
+  }
+
   static getUserRole(): UserRole {
     return loadFromStorage<UserRole>(KEYS.USER_ROLE, 'Cluster Coordinator');
   }
@@ -221,52 +168,12 @@ export class StorageService {
   static getCurrentCycleId(): string {
     return loadFromStorage<string>(KEYS.CURRENT_CYCLE_ID, 'cycle-14');
   }
-  static saveCurrentCycleId(id: string): void {
-    saveToStorage(KEYS.CURRENT_CYCLE_ID, id);
+  static saveCurrentCycleId(cycleId: string): void {
+    saveToStorage(KEYS.CURRENT_CYCLE_ID, cycleId);
   }
 
-  // Security & Sensitive Contact Protection
-  static async verifyPin(enteredPin: string): Promise<boolean> {
-    const storedHash = localStorage.getItem(KEYS.SECURITY_PIN_HASH);
-    const hashToTest = await computeSha256(enteredPin);
-    if (!storedHash) {
-      return enteredPin === '1844' || hashToTest === DEFAULT_PIN_HASH;
-    }
-    return hashToTest === storedHash;
-  }
-
-  static async setSecurityPin(newPin: string): Promise<void> {
-    const hash = await computeSha256(newPin);
-    localStorage.setItem(KEYS.SECURITY_PIN_HASH, hash);
-  }
-
-  static getMaskSensitiveData(): boolean {
-    const stored = localStorage.getItem(KEYS.MASK_SENSITIVE_DATA);
-    return stored === null ? true : stored === 'true';
-  }
-
-  static setMaskSensitiveData(mask: boolean): void {
-    localStorage.setItem(KEYS.MASK_SENSITIVE_DATA, String(mask));
-  }
-
-  static logAction(userRole: UserRole, action: string, details: string): void {
-    const logs = this.getAuditLogs();
-    const newLog: AuditLog = {
-      id: 'log-' + Date.now(),
-      timestamp: new Date().toISOString(),
-      userRole,
-      action,
-      details
-    };
-    this.saveAuditLogs([newLog, ...logs.slice(0, 99)]);
-  }
-
+  // Reset demo data
   static resetDemoData(): void {
-    this.resetAllData();
-  }
-
-  // Reset to initial demo database
-  static resetAllData(): void {
     saveToStorage(KEYS.LOCALITIES, INITIAL_LOCALITIES);
     saveToStorage(KEYS.PEOPLE, INITIAL_PEOPLE);
     saveToStorage(KEYS.ACTIVITIES, INITIAL_ACTIVITIES);
@@ -277,11 +184,6 @@ export class StorageService {
     saveToStorage(KEYS.HOME_VISITS, INITIAL_HOME_VISITS);
     saveToStorage(KEYS.SERVICE_VISITS, INITIAL_SERVICE_VISITS);
     saveToStorage(KEYS.NEW_BAHAIS, INITIAL_NEW_BAHAIS);
-    saveToStorage(KEYS.FRIENDS_COMING_IN, INITIAL_FRIENDS_COMING_IN);
-    saveToStorage(KEYS.FRIENDS_GOING_OUT, INITIAL_FRIENDS_GOING_OUT);
-    saveToStorage(KEYS.REPORT_PLANS, INITIAL_REPORT_PLANS);
-    saveToStorage(KEYS.REPORT_CHALLENGES, INITIAL_REPORT_CHALLENGES);
-    saveToStorage(KEYS.REPORT_PIONEERS, INITIAL_REPORT_PIONEERS);
     saveToStorage(KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
     saveToStorage(KEYS.CYCLES, INITIAL_CYCLES);
     saveToStorage(KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
@@ -291,7 +193,7 @@ export class StorageService {
   // Backup & restore whole DB as JSON
   static exportFullBackup(): string {
     const data = {
-      version: '2.0',
+      version: '1.0',
       exportedAt: new Date().toISOString(),
       cluster: 'Kimana Cluster',
       localities: this.getLocalities(),
@@ -304,11 +206,6 @@ export class StorageService {
       homeVisits: this.getHomeVisits(),
       serviceVisits: this.getServiceVisits(),
       newBahais: this.getNewBahais(),
-      friendsComingIn: this.getFriendsComingIn(),
-      friendsGoingOut: this.getFriendsGoingOut(),
-      reportPlans: this.getReportPlans(),
-      reportChallenges: this.getReportChallenges(),
-      reportPioneers: this.getReportPioneers(),
       followUps: this.getFollowUps(),
       cycles: this.getCycles(),
       auditLogs: this.getAuditLogs()
@@ -331,11 +228,6 @@ export class StorageService {
       if (parsed.homeVisits) this.saveHomeVisits(parsed.homeVisits);
       if (parsed.serviceVisits) this.saveServiceVisits(parsed.serviceVisits);
       if (parsed.newBahais) this.saveNewBahais(parsed.newBahais);
-      if (parsed.friendsComingIn) this.saveFriendsComingIn(parsed.friendsComingIn);
-      if (parsed.friendsGoingOut) this.saveFriendsGoingOut(parsed.friendsGoingOut);
-      if (parsed.reportPlans) this.saveReportPlans(parsed.reportPlans);
-      if (parsed.reportChallenges) this.saveReportChallenges(parsed.reportChallenges);
-      if (parsed.reportPioneers) this.saveReportPioneers(parsed.reportPioneers);
       if (parsed.followUps) this.saveFollowUps(parsed.followUps);
       if (parsed.cycles) this.saveCycles(parsed.cycles);
       if (parsed.auditLogs) this.saveAuditLogs(parsed.auditLogs);

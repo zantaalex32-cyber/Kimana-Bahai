@@ -58,7 +58,7 @@ export const Sidebar: React.FC = () => {
               </div>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                  isActive ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                  isActive ? 'bg-emerald-800 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
                 }`}>
                   {item.badge}
                 </span>

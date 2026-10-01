@@ -5,15 +5,13 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Person, ServiceRole } from '../../types';
-import { MultiPersonEntryModal } from '../modals/MultiPersonEntryModal';
 
 export const PeopleView: React.FC = () => {
-  const { people, localities, addPerson, updatePerson, deletePerson, userRole, formatContact } = useApp();
+  const { people, localities, addPerson, updatePerson, deletePerson, userRole } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [localityFilter, setLocalityFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [showContactDetails, setShowContactDetails] = useState(false);
-  const [isMultiModalOpen, setIsMultiModalOpen] = useState(false);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
@@ -143,16 +141,6 @@ export const PeopleView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {userRole !== 'Viewer' && (
-            <button
-              onClick={() => setIsMultiModalOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition"
-            >
-              <Users className="w-4 h-4" />
-              <span>Multi-Person Entry</span>
-            </button>
-          )}
-
           <button
             onClick={() => setShowContactDetails(!showContactDetails)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
@@ -168,7 +156,7 @@ export const PeopleView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold shadow-sm transition"
             >
               <UserPlus className="w-4 h-4" />
-              <span>Add Single</span>
+              Add Friend
             </button>
           )}
         </div>
@@ -423,13 +411,6 @@ export const PeopleView: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Multi-Person Entry Modal */}
-      <MultiPersonEntryModal
-        isOpen={isMultiModalOpen}
-        onClose={() => setIsMultiModalOpen(false)}
-        defaultCategory="people"
-      />
     </div>
   );
 };

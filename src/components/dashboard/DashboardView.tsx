@@ -2,24 +2,19 @@ import React, { useState } from 'react';
 import { 
   Users, UserPlus, MapPin, BookOpen, Sparkles, GraduationCap, 
   HeartHandshake, Home, Calendar, AlertCircle, PlaneTakeoff, 
-  HelpCircle, ArrowUpRight, ArrowDownRight, TrendingUp, Filter, ChevronRight, CheckCircle
+  HelpCircle, ArrowUpRight, TrendingUp, Filter, ChevronRight, CheckCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, LineChart, Line, AreaChart, Area, Legend 
 } from 'recharts';
 import { useApp } from '../../context/AppContext';
-import { WhatsAppIcon } from '../reports/WhatsAppShareModal';
 
-export const DashboardView: React.FC<{ 
-  onQuickRecord: () => void;
-  onOpenMultiEntry?: () => void;
-}> = ({ onQuickRecord, onOpenMultiEntry }) => {
+export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuickRecord }) => {
   const { 
     localities, people, activities, studyCircles, 
     childrenClasses, juniorYouthGroups, devotionals, 
     homeVisits, serviceVisits, newBahais, followUps, 
-    friendsComingIn, friendsGoingOut,
     cycles, currentCycleId, dateFilter, setDateFilter, 
     selectedLocalityFilter, setSelectedLocalityFilter,
     setActiveTab 
@@ -113,8 +108,7 @@ export const DashboardView: React.FC<{
   // Stat Card Item List
   const statCards = [
     { title: 'Total Bahá’ís', value: totalBahais, icon: Users, color: 'emerald', tab: 'localities' as const },
-    { title: 'Friends Coming In', value: friendsComingIn.length, icon: ArrowDownRight, color: 'teal', tab: 'friendscomingin' as const },
-    { title: 'Friends Going Out', value: friendsGoingOut.length, icon: ArrowUpRight, color: 'amber', tab: 'friendsgoingout' as const },
+    { title: 'New Bahá’ís', value: totalNewBahais, icon: UserPlus, color: 'blue', tab: 'newbahais' as const },
     { title: 'Active Localities', value: activeLocalitiesCount, icon: MapPin, color: 'teal', tab: 'localities' as const },
     { title: 'Study Circles', value: studyCirclesCount, icon: BookOpen, color: 'indigo', tab: 'studycircles' as const },
     { title: 'Children’s Classes', value: childrenClassesCount, icon: Sparkles, color: 'amber', tab: 'childrensclasses' as const },
@@ -181,56 +175,6 @@ export const DashboardView: React.FC<{
           </div>
         </div>
       </div>
-
-      {/* Multi-Person Entry & Fast Action Hub */}
-      {onOpenMultiEntry && (
-        <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-100/50 dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-slate-900 border border-emerald-200/80 dark:border-emerald-800/60 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md flex-shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">
-                  Multiple-Person Batch Entry
-                </h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200">
-                  Fast Roster Entry
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 max-w-xl">
-                Enter multiple people at once for Children's Classes, Junior Youth, Study Circles, Devotionals, Friends Coming In, or Outbound Friends.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-start md:self-auto">
-            <button
-              onClick={onOpenMultiEntry}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white text-xs sm:text-sm font-bold shadow-sm transition"
-              id="dashboard-open-multi-entry"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Open Multi-Person Form</span>
-            </button>
-            <button
-              onClick={onQuickRecord}
-              className="px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs sm:text-sm font-semibold transition"
-              id="dashboard-open-quick-record"
-            >
-              Quick Log
-            </button>
-            <button
-              onClick={() => setActiveTab('reports')}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#25D366]/10 text-[#128C7E] dark:text-[#25D366] hover:bg-[#25D366]/20 border border-[#25D366]/30 text-xs sm:text-sm font-semibold transition"
-              id="dashboard-share-whatsapp-report"
-            >
-              <WhatsAppIcon className="w-4 h-4 fill-current" />
-              <span>Share Report</span>
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Quick Answers Section: "What's happening in Kimana this week?" */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">

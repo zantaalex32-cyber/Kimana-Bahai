@@ -2,9 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { 
   Locality, Person, Activity, StudyCircle, ChildrenClass, 
   JuniorYouthGroup, DevotionalMeeting, HomeVisit, ServiceVisit, 
-  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole, NavigationTab,
-  FriendComingIn, FriendGoingOut, ReportPlan, ReportChallenge, ReportPioneer,
-  ParticipantRecord
+  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole, NavigationTab 
 } from '../types';
 import { StorageService } from '../services/storage';
 
@@ -30,15 +28,6 @@ interface AppContextType {
   selectedLocalityFilter: string;
   setSelectedLocalityFilter: (locId: string) => void;
 
-  // Security & Sensitive Data Access Control
-  isSecurityUnlocked: boolean;
-  verifyAndUnlock: (pin: string) => Promise<boolean>;
-  lockSensitiveData: () => void;
-  maskSensitiveData: boolean;
-  setMaskSensitiveData: (mask: boolean) => void;
-  changeSecurityPin: (newPin: string) => Promise<void>;
-  formatContact: (contact?: string) => string;
-
   // Data
   localities: Locality[];
   people: Person[];
@@ -50,11 +39,6 @@ interface AppContextType {
   homeVisits: HomeVisit[];
   serviceVisits: ServiceVisit[];
   newBahais: NewBahai[];
-  friendsComingIn: FriendComingIn[];
-  friendsGoingOut: FriendGoingOut[];
-  reportPlans: ReportPlan[];
-  reportChallenges: ReportChallenge[];
-  reportPioneers: ReportPioneer[];
   followUps: FollowUpItem[];
   cycles: Cycle[];
   auditLogs: AuditLog[];
@@ -68,7 +52,6 @@ interface AppContextType {
   deleteLocality: (id: string) => void;
 
   addPerson: (item: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  batchAddPeople: (items: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
   updatePerson: (id: string, item: Partial<Person>) => void;
   deletePerson: (id: string) => void;
 
@@ -88,12 +71,6 @@ interface AppContextType {
   updateJuniorYouthGroup: (id: string, item: Partial<JuniorYouthGroup>) => void;
   deleteJuniorYouthGroup: (id: string) => void;
 
-  batchAddParticipantsToGroup: (
-    type: 'children' | 'junioryouth' | 'studycircles' | 'devotionals',
-    groupId: string,
-    newNames: string[]
-  ) => void;
-
   addDevotional: (item: Omit<DevotionalMeeting, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateDevotional: (id: string, item: Partial<DevotionalMeeting>) => void;
   deleteDevotional: (id: string) => void;
@@ -109,31 +86,6 @@ interface AppContextType {
   addNewBahai: (item: Omit<NewBahai, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateNewBahai: (id: string, item: Partial<NewBahai>) => void;
   deleteNewBahai: (id: string) => void;
-
-  // Dedicated Friends Coming In
-  addFriendComingIn: (item: Omit<FriendComingIn, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  batchAddFriendsComingIn: (items: Omit<FriendComingIn, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
-  updateFriendComingIn: (id: string, item: Partial<FriendComingIn>) => void;
-  deleteFriendComingIn: (id: string) => void;
-
-  // Dedicated Friends Going Out
-  addFriendGoingOut: (item: Omit<FriendGoingOut, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  batchAddFriendsGoingOut: (items: Omit<FriendGoingOut, 'id' | 'createdAt' | 'updatedAt'>[]) => void;
-  updateFriendGoingOut: (id: string, item: Partial<FriendGoingOut>) => void;
-  deleteFriendGoingOut: (id: string) => void;
-
-  // Formal Report Sections
-  addReportPlan: (item: Omit<ReportPlan, 'id'>) => void;
-  updateReportPlan: (id: string, item: Partial<ReportPlan>) => void;
-  deleteReportPlan: (id: string) => void;
-
-  addReportChallenge: (item: Omit<ReportChallenge, 'id'>) => void;
-  updateReportChallenge: (id: string, item: Partial<ReportChallenge>) => void;
-  deleteReportChallenge: (id: string) => void;
-
-  addReportPioneer: (item: Omit<ReportPioneer, 'id'>) => void;
-  updateReportPioneer: (id: string, item: Partial<ReportPioneer>) => void;
-  deleteReportPioneer: (id: string) => void;
 
   addFollowUp: (item: Omit<FollowUpItem, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateFollowUp: (id: string, item: Partial<FollowUpItem>) => void;
@@ -160,10 +112,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'cycle'>('all');
   const [selectedLocalityFilter, setSelectedLocalityFilter] = useState<string>('all');
 
-  // Security state
-  const [isSecurityUnlocked, setIsSecurityUnlocked] = useState<boolean>(true); // default unlocked for coordinator session
-  const [maskSensitiveData, setMaskSensitiveDataState] = useState<boolean>(true);
-
   // Entities state
   const [localities, setLocalities] = useState<Locality[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
@@ -175,11 +123,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [homeVisits, setHomeVisits] = useState<HomeVisit[]>([]);
   const [serviceVisits, setServiceVisits] = useState<ServiceVisit[]>([]);
   const [newBahais, setNewBahais] = useState<NewBahai[]>([]);
-  const [friendsComingIn, setFriendsComingIn] = useState<FriendComingIn[]>([]);
-  const [friendsGoingOut, setFriendsGoingOut] = useState<FriendGoingOut[]>([]);
-  const [reportPlans, setReportPlans] = useState<ReportPlan[]>([]);
-  const [reportChallenges, setReportChallenges] = useState<ReportChallenge[]>([]);
-  const [reportPioneers, setReportPioneers] = useState<ReportPioneer[]>([]);
   const [followUps, setFollowUps] = useState<FollowUpItem[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -188,7 +131,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     setUserRoleState(StorageService.getUserRole());
     setCurrentCycleIdState(StorageService.getCurrentCycleId());
-    setMaskSensitiveDataState(StorageService.getMaskSensitiveData());
     
     // Check dark mode preference
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
@@ -210,11 +152,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setHomeVisits(StorageService.getHomeVisits());
     setServiceVisits(StorageService.getServiceVisits());
     setNewBahais(StorageService.getNewBahais());
-    setFriendsComingIn(StorageService.getFriendsComingIn());
-    setFriendsGoingOut(StorageService.getFriendsGoingOut());
-    setReportPlans(StorageService.getReportPlans());
-    setReportChallenges(StorageService.getReportChallenges());
-    setReportPioneers(StorageService.getReportPioneers());
     setFollowUps(StorageService.getFollowUps());
     setCycles(StorageService.getCycles());
     setAuditLogs(StorageService.getAuditLogs());
@@ -248,43 +185,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Helper for generating IDs and timestamps
   const now = () => new Date().toISOString();
 
-  // Security Unlock & Contact Privacy
-  const verifyAndUnlock = async (pin: string): Promise<boolean> => {
-    const isValid = await StorageService.verifyPin(pin);
-    if (isValid) {
-      setIsSecurityUnlocked(true);
-      StorageService.logAction(userRole, 'Security Authentication', 'Unlocked sensitive contact data view');
-    }
-    return isValid;
-  };
-
-  const lockSensitiveData = () => {
-    setIsSecurityUnlocked(false);
-  };
-
-  const setMaskSensitiveData = (mask: boolean) => {
-    setMaskSensitiveDataState(mask);
-    StorageService.setMaskSensitiveData(mask);
-  };
-
-  const changeSecurityPin = async (newPin: string): Promise<void> => {
-    await StorageService.setSecurityPin(newPin);
-    StorageService.logAction(userRole, 'Security Setting', 'Updated cluster administrator security PIN');
-  };
-
-  const formatContact = (contact?: string): string => {
-    if (!contact) return '—';
-    // If not masking, or user role is Admin/Coordinator and isUnlocked
-    if (!maskSensitiveData || isSecurityUnlocked || userRole === 'Administrator') {
-      return contact;
-    }
-    // Return masked contact
-    if (contact.length <= 6) return '••••••';
-    const first3 = contact.slice(0, 4);
-    const last3 = contact.slice(-3);
-    return `${first3}••••${last3}`;
-  };
-
   // CRUD Implementations
   const addLocality = (item: Omit<Locality, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newItem: Locality = { ...item, id: 'loc-' + Date.now(), createdAt: now(), updatedAt: now() };
@@ -313,34 +213,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...people];
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Added Person', `Added individual "${newItem.name}"`);
-  };
-
-  const batchAddPeople = (items: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-    const newItems: Person[] = items.map((item, idx) => ({
-      ...item,
-      id: 'person-' + Date.now() + '-' + idx,
-      createdAt: now(),
-      updatedAt: now()
-    }));
-    const updated = [...newItems, ...people];
-    setPeople(updated);
-    StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Batch Added People', `Added ${newItems.length} people simultaneously`);
+    StorageService.logAction(userRole, 'Added Person', `Added friend "${newItem.name}"`);
   };
 
   const updatePerson = (id: string, item: Partial<Person>) => {
     const updated = people.map(p => p.id === id ? { ...p, ...item, updatedAt: now() } : p);
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Updated Person', `Updated individual record ID ${id}`);
+    StorageService.logAction(userRole, 'Updated Person', `Updated person ID ${id}`);
   };
 
   const deletePerson = (id: string) => {
     const updated = people.filter(p => p.id !== id);
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Deleted Person', `Removed individual record ID ${id}`);
+    StorageService.logAction(userRole, 'Deleted Person', `Removed person ID ${id}`);
   };
 
   const addActivity = (item: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -348,7 +235,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...activities];
     setActivities(updated);
     StorageService.saveActivities(updated);
-    StorageService.logAction(userRole, 'Created Activity', `Created ${newItem.type}: "${newItem.title}"`);
+    StorageService.logAction(userRole, 'Added Activity', `Created activity "${newItem.title}"`);
+
+    // If follow-up required, auto add to follow-ups
+    if (newItem.followUpRequired && newItem.followUpDate) {
+      addFollowUp({
+        title: `Follow up: ${newItem.title}`,
+        responsiblePerson: newItem.personResponsible,
+        relatedEntity: `Activity: ${newItem.title}`,
+        localityName: newItem.localityName,
+        dueDate: newItem.followUpDate,
+        priority: 'Medium',
+        status: newItem.followUpStatus || 'Pending',
+        notes: newItem.followUpNotes
+      });
+    }
   };
 
   const updateActivity = (id: string, item: Partial<Activity>) => {
@@ -362,7 +263,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = activities.filter(a => a.id !== id);
     setActivities(updated);
     StorageService.saveActivities(updated);
-    StorageService.logAction(userRole, 'Deleted Activity', `Deleted activity ID ${id}`);
+    StorageService.logAction(userRole, 'Deleted Activity', `Removed activity ID ${id}`);
   };
 
   const addStudyCircle = (item: Omit<StudyCircle, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -370,7 +271,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...studyCircles];
     setStudyCircles(updated);
     StorageService.saveStudyCircles(updated);
-    StorageService.logAction(userRole, 'Added Study Circle', `Started study group "${newItem.groupName}"`);
+    StorageService.logAction(userRole, 'Added Study Circle', `Added study group "${newItem.groupName}"`);
   };
 
   const updateStudyCircle = (id: string, item: Partial<StudyCircle>) => {
@@ -392,21 +293,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...childrenClasses];
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Added Children Class', `Created children's class "${newItem.className}"`);
+    StorageService.logAction(userRole, 'Added Children Class', `Added class "${newItem.className}"`);
   };
 
   const updateChildrenClass = (id: string, item: Partial<ChildrenClass>) => {
     const updated = childrenClasses.map(c => c.id === id ? { ...c, ...item, updatedAt: now() } : c);
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Updated Children Class', `Updated children's class ID ${id}`);
+    StorageService.logAction(userRole, 'Updated Children Class', `Updated children class ID ${id}`);
   };
 
   const deleteChildrenClass = (id: string) => {
     const updated = childrenClasses.filter(c => c.id !== id);
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Deleted Children Class', `Removed children's class ID ${id}`);
+    StorageService.logAction(userRole, 'Deleted Children Class', `Removed class ID ${id}`);
   };
 
   const addJuniorYouthGroup = (item: Omit<JuniorYouthGroup, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -414,63 +315,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...juniorYouthGroups];
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Added Junior Youth Group', `Created JY group "${newItem.groupName}"`);
+    StorageService.logAction(userRole, 'Added JY Group', `Added group "${newItem.groupName}"`);
   };
 
   const updateJuniorYouthGroup = (id: string, item: Partial<JuniorYouthGroup>) => {
     const updated = juniorYouthGroups.map(j => j.id === id ? { ...j, ...item, updatedAt: now() } : j);
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Updated Junior Youth Group', `Updated JY group ID ${id}`);
+    StorageService.logAction(userRole, 'Updated JY Group', `Updated group ID ${id}`);
   };
 
   const deleteJuniorYouthGroup = (id: string) => {
     const updated = juniorYouthGroups.filter(j => j.id !== id);
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Deleted Junior Youth Group', `Removed JY group ID ${id}`);
-  };
-
-  const batchAddParticipantsToGroup = (
-    type: 'children' | 'junioryouth' | 'studycircles' | 'devotionals',
-    groupId: string,
-    newNames: string[]
-  ) => {
-    if (type === 'children') {
-      const cls = childrenClasses.find(c => c.id === groupId);
-      if (cls) {
-        const merged = Array.from(new Set([...cls.childrenNames, ...newNames]));
-        updateChildrenClass(groupId, {
-          childrenNames: merged,
-          averageAttendance: Math.max(cls.averageAttendance, merged.length)
-        });
-      }
-    } else if (type === 'junioryouth') {
-      const grp = juniorYouthGroups.find(j => j.id === groupId);
-      if (grp) {
-        const merged = Array.from(new Set([...grp.members, ...newNames]));
-        updateJuniorYouthGroup(groupId, {
-          members: merged,
-          averageAttendance: Math.max(grp.averageAttendance, merged.length)
-        });
-      }
-    } else if (type === 'studycircles') {
-      const sc = studyCircles.find(s => s.id === groupId);
-      if (sc) {
-        const merged = Array.from(new Set([...sc.participants, ...newNames]));
-        updateStudyCircle(groupId, { participants: merged });
-      }
-    } else if (type === 'devotionals') {
-      const dev = devotionals.find(d => d.id === groupId);
-      if (dev) {
-        const existing = dev.participantNames || [];
-        const merged = Array.from(new Set([...existing, ...newNames]));
-        updateDevotional(groupId, {
-          participantNames: merged,
-          participantsCount: Math.max(dev.participantsCount, merged.length)
-        });
-      }
-    }
+    StorageService.logAction(userRole, 'Deleted JY Group', `Removed group ID ${id}`);
   };
 
   const addDevotional = (item: Omit<DevotionalMeeting, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -501,6 +360,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setHomeVisits(updated);
     StorageService.saveHomeVisits(updated);
     StorageService.logAction(userRole, 'Added Home Visit', `Recorded visit to "${newItem.familyOrPersonVisited}"`);
+
+    if (newItem.followUpNeeded && newItem.followUpDate) {
+      addFollowUp({
+        title: `Home Visit Follow-up: ${newItem.familyOrPersonVisited}`,
+        responsiblePerson: newItem.visitors[0] || 'Coordinator',
+        relatedEntity: `Home Visit: ${newItem.familyOrPersonVisited}`,
+        localityName: newItem.localityName,
+        dueDate: newItem.followUpDate,
+        priority: 'Medium',
+        status: 'Pending',
+        notes: newItem.notes
+      });
+    }
   };
 
   const updateHomeVisit = (id: string, item: Partial<HomeVisit>) => {
@@ -522,18 +394,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...serviceVisits];
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
-    StorageService.logAction(userRole, 'Added Service Visit', `Recorded travel/service visit for ${newItem.personName}`);
+    StorageService.logAction(userRole, 'Added Service Visit', `Recorded travel/visit for "${newItem.personName}"`);
   };
 
   const updateServiceVisit = (id: string, item: Partial<ServiceVisit>) => {
-    const updated = serviceVisits.map(s => s.id === id ? { ...s, ...item, updatedAt: now() } : s);
+    const updated = serviceVisits.map(v => v.id === id ? { ...v, ...item, updatedAt: now() } : v);
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
     StorageService.logAction(userRole, 'Updated Service Visit', `Updated visit ID ${id}`);
   };
 
   const deleteServiceVisit = (id: string) => {
-    const updated = serviceVisits.filter(s => s.id !== id);
+    const updated = serviceVisits.filter(v => v.id !== id);
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
     StorageService.logAction(userRole, 'Deleted Service Visit', `Removed visit ID ${id}`);
@@ -544,151 +416,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...newBahais];
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Added New Bahá’í', `Recorded declaration of ${newItem.name}`);
+    StorageService.logAction(userRole, 'Added New Bahá’í', `Recorded declaration for "${newItem.name}"`);
+
+    // Update locality population count
+    const targetLoc = localities.find(l => l.id === newItem.localityId);
+    if (targetLoc) {
+      updateLocality(targetLoc.id, { bahaiCount: targetLoc.bahaiCount + 1 });
+    }
   };
 
   const updateNewBahai = (id: string, item: Partial<NewBahai>) => {
     const updated = newBahais.map(n => n.id === id ? { ...n, ...item, updatedAt: now() } : n);
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Updated New Bahá’í', `Updated record for ${id}`);
+    StorageService.logAction(userRole, 'Updated New Bahá’í', `Updated record ID ${id}`);
   };
 
   const deleteNewBahai = (id: string) => {
     const updated = newBahais.filter(n => n.id !== id);
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Deleted New Bahá’í', `Removed record ID ${id}`);
-  };
-
-  // Dedicated Friends Coming In
-  const addFriendComingIn = (item: Omit<FriendComingIn, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newItem: FriendComingIn = { ...item, id: 'fci-' + Date.now(), createdAt: now(), updatedAt: now() };
-    const updated = [newItem, ...friendsComingIn];
-    setFriendsComingIn(updated);
-    StorageService.saveFriendsComingIn(updated);
-    StorageService.logAction(userRole, 'Added Friend Coming In', `Recorded new arrival: ${newItem.fullName}`);
-  };
-
-  const batchAddFriendsComingIn = (items: Omit<FriendComingIn, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-    const newItems: FriendComingIn[] = items.map((item, idx) => ({
-      ...item,
-      id: 'fci-' + Date.now() + '-' + idx,
-      createdAt: now(),
-      updatedAt: now()
-    }));
-    const updated = [...newItems, ...friendsComingIn];
-    setFriendsComingIn(updated);
-    StorageService.saveFriendsComingIn(updated);
-    StorageService.logAction(userRole, 'Batch Added Friends Coming In', `Recorded ${newItems.length} friends coming into community`);
-  };
-
-  const updateFriendComingIn = (id: string, item: Partial<FriendComingIn>) => {
-    const updated = friendsComingIn.map(f => f.id === id ? { ...f, ...item, updatedAt: now() } : f);
-    setFriendsComingIn(updated);
-    StorageService.saveFriendsComingIn(updated);
-    StorageService.logAction(userRole, 'Updated Friend Coming In', `Updated arrival record ID ${id}`);
-  };
-
-  const deleteFriendComingIn = (id: string) => {
-    const updated = friendsComingIn.filter(f => f.id !== id);
-    setFriendsComingIn(updated);
-    StorageService.saveFriendsComingIn(updated);
-    StorageService.logAction(userRole, 'Deleted Friend Coming In', `Deleted arrival record ID ${id}`);
-  };
-
-  // Dedicated Friends Going Out
-  const addFriendGoingOut = (item: Omit<FriendGoingOut, 'id' | 'createdAt' | 'updatedAt'>) => {
-    const newItem: FriendGoingOut = { ...item, id: 'fgo-' + Date.now(), createdAt: now(), updatedAt: now() };
-    const updated = [newItem, ...friendsGoingOut];
-    setFriendsGoingOut(updated);
-    StorageService.saveFriendsGoingOut(updated);
-    StorageService.logAction(userRole, 'Added Friend Going Out', `Recorded outbound friend: ${newItem.fullName}`);
-  };
-
-  const batchAddFriendsGoingOut = (items: Omit<FriendGoingOut, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-    const newItems: FriendGoingOut[] = items.map((item, idx) => ({
-      ...item,
-      id: 'fgo-' + Date.now() + '-' + idx,
-      createdAt: now(),
-      updatedAt: now()
-    }));
-    const updated = [...newItems, ...friendsGoingOut];
-    setFriendsGoingOut(updated);
-    StorageService.saveFriendsGoingOut(updated);
-    StorageService.logAction(userRole, 'Batch Added Friends Going Out', `Recorded ${newItems.length} outbound friends`);
-  };
-
-  const updateFriendGoingOut = (id: string, item: Partial<FriendGoingOut>) => {
-    const updated = friendsGoingOut.map(f => f.id === id ? { ...f, ...item, updatedAt: now() } : f);
-    setFriendsGoingOut(updated);
-    StorageService.saveFriendsGoingOut(updated);
-    StorageService.logAction(userRole, 'Updated Friend Going Out', `Updated outbound record ID ${id}`);
-  };
-
-  const deleteFriendGoingOut = (id: string) => {
-    const updated = friendsGoingOut.filter(f => f.id !== id);
-    setFriendsGoingOut(updated);
-    StorageService.saveFriendsGoingOut(updated);
-    StorageService.logAction(userRole, 'Deleted Friend Going Out', `Deleted outbound record ID ${id}`);
-  };
-
-  // Formal Report Sections
-  const addReportPlan = (item: Omit<ReportPlan, 'id'>) => {
-    const newItem: ReportPlan = { ...item, id: 'plan-' + Date.now() };
-    const updated = [newItem, ...reportPlans];
-    setReportPlans(updated);
-    StorageService.saveReportPlans(updated);
-  };
-
-  const updateReportPlan = (id: string, item: Partial<ReportPlan>) => {
-    const updated = reportPlans.map(p => p.id === id ? { ...p, ...item } : p);
-    setReportPlans(updated);
-    StorageService.saveReportPlans(updated);
-  };
-
-  const deleteReportPlan = (id: string) => {
-    const updated = reportPlans.filter(p => p.id !== id);
-    setReportPlans(updated);
-    StorageService.saveReportPlans(updated);
-  };
-
-  const addReportChallenge = (item: Omit<ReportChallenge, 'id'>) => {
-    const newItem: ReportChallenge = { ...item, id: 'ch-' + Date.now() };
-    const updated = [newItem, ...reportChallenges];
-    setReportChallenges(updated);
-    StorageService.saveReportChallenges(updated);
-  };
-
-  const updateReportChallenge = (id: string, item: Partial<ReportChallenge>) => {
-    const updated = reportChallenges.map(c => c.id === id ? { ...c, ...item } : c);
-    setReportChallenges(updated);
-    StorageService.saveReportChallenges(updated);
-  };
-
-  const deleteReportChallenge = (id: string) => {
-    const updated = reportChallenges.filter(c => c.id !== id);
-    setReportChallenges(updated);
-    StorageService.saveReportChallenges(updated);
-  };
-
-  const addReportPioneer = (item: Omit<ReportPioneer, 'id'>) => {
-    const newItem: ReportPioneer = { ...item, id: 'pion-' + Date.now() };
-    const updated = [newItem, ...reportPioneers];
-    setReportPioneers(updated);
-    StorageService.saveReportPioneers(updated);
-  };
-
-  const updateReportPioneer = (id: string, item: Partial<ReportPioneer>) => {
-    const updated = reportPioneers.map(p => p.id === id ? { ...p, ...item } : p);
-    setReportPioneers(updated);
-    StorageService.saveReportPioneers(updated);
-  };
-
-  const deleteReportPioneer = (id: string) => {
-    const updated = reportPioneers.filter(p => p.id !== id);
-    setReportPioneers(updated);
-    StorageService.saveReportPioneers(updated);
+    StorageService.logAction(userRole, 'Deleted New Bahá’í Record', `Removed record ID ${id}`);
   };
 
   const addFollowUp = (item: Omit<FollowUpItem, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -749,31 +497,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       currentCycleId, setCurrentCycleId,
       dateFilter, setDateFilter,
       selectedLocalityFilter, setSelectedLocalityFilter,
-      isSecurityUnlocked, verifyAndUnlock, lockSensitiveData,
-      maskSensitiveData, setMaskSensitiveData, changeSecurityPin, formatContact,
       localities, people, activities, studyCircles,
       childrenClasses, juniorYouthGroups, devotionals,
-      homeVisits, serviceVisits, newBahais,
-      friendsComingIn, friendsGoingOut,
-      reportPlans, reportChallenges, reportPioneers,
-      followUps, cycles, auditLogs,
+      homeVisits, serviceVisits, newBahais, followUps,
+      cycles, auditLogs,
       refreshData,
       addLocality, updateLocality, deleteLocality,
-      addPerson, batchAddPeople, updatePerson, deletePerson,
+      addPerson, updatePerson, deletePerson,
       addActivity, updateActivity, deleteActivity,
       addStudyCircle, updateStudyCircle, deleteStudyCircle,
       addChildrenClass, updateChildrenClass, deleteChildrenClass,
       addJuniorYouthGroup, updateJuniorYouthGroup, deleteJuniorYouthGroup,
-      batchAddParticipantsToGroup,
       addDevotional, updateDevotional, deleteDevotional,
       addHomeVisit, updateHomeVisit, deleteHomeVisit,
       addServiceVisit, updateServiceVisit, deleteServiceVisit,
       addNewBahai, updateNewBahai, deleteNewBahai,
-      addFriendComingIn, batchAddFriendsComingIn, updateFriendComingIn, deleteFriendComingIn,
-      addFriendGoingOut, batchAddFriendsGoingOut, updateFriendGoingOut, deleteFriendGoingOut,
-      addReportPlan, updateReportPlan, deleteReportPlan,
-      addReportChallenge, updateReportChallenge, deleteReportChallenge,
-      addReportPioneer, updateReportPioneer, deleteReportPioneer,
       addFollowUp, updateFollowUp, deleteFollowUp,
       addCycle, updateCycle,
       resetDemoData, exportDataJSON, importDataJSON
