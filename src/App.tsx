@@ -16,6 +16,8 @@ import { DevotionalsView } from './components/devotionals/DevotionalsView';
 import { HomeVisitsView } from './components/homevisits/HomeVisitsView';
 import { VisitsView } from './components/visits/VisitsView';
 import { NewBahaisView } from './components/newbahais/NewBahaisView';
+import { FriendsComingInView } from './components/friendscomingin/FriendsComingInView';
+import { FriendsGoingOutView } from './components/friendsgoingout/FriendsGoingOutView';
 import { CalendarView } from './components/calendar/CalendarView';
 import { FollowUpsView } from './components/followups/FollowUpsView';
 import { ReportsView } from './components/reports/ReportsView';
@@ -25,11 +27,15 @@ import { SettingsView } from './components/settings/SettingsView';
 // Modals
 import { QuickRecordModal } from './components/modals/QuickRecordModal';
 import { GlobalSearchModal } from './components/modals/GlobalSearchModal';
+import { MultiPersonEntryModal } from './components/modals/MultiPersonEntryModal';
+import { SecurityPinModal } from './components/modals/SecurityPinModal';
 
 const AppContent: React.FC = () => {
   const { activeTab, theme } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickRecordOpen, setIsQuickRecordOpen] = useState(false);
+  const [isMultiEntryOpen, setIsMultiEntryOpen] = useState(false);
+  const [isSecurityPinOpen, setIsSecurityPinOpen] = useState(false);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -39,6 +45,10 @@ const AppContent: React.FC = () => {
         return <LocalitiesView />;
       case 'people':
         return <PeopleView />;
+      case 'friendscomingin':
+        return <FriendsComingInView />;
+      case 'friendsgoingout':
+        return <FriendsGoingOutView />;
       case 'activities':
         return <ActivitiesView />;
       case 'studycircles':
@@ -54,7 +64,7 @@ const AppContent: React.FC = () => {
       case 'visits':
         return <VisitsView />;
       case 'newbahais':
-        return <NewBahaisView />;
+        return <FriendsComingInView />;
       case 'calendar':
         return <CalendarView />;
       case 'followups':
@@ -78,6 +88,8 @@ const AppContent: React.FC = () => {
         <Header 
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onQuickRecord={() => setIsQuickRecordOpen(true)}
+          onOpenMultiEntry={() => setIsMultiEntryOpen(true)}
+          onOpenSecurityPin={() => setIsSecurityPinOpen(true)}
         />
 
         {/* Main Content Area with Sidebar */}
@@ -101,6 +113,18 @@ const AppContent: React.FC = () => {
         <QuickRecordModal 
           isOpen={isQuickRecordOpen}
           onClose={() => setIsQuickRecordOpen(false)}
+        />
+
+        {/* Multi-Person Data Entry Modal */}
+        <MultiPersonEntryModal 
+          isOpen={isMultiEntryOpen}
+          onClose={() => setIsMultiEntryOpen(false)}
+        />
+
+        {/* Security Access Control / PIN Modal */}
+        <SecurityPinModal 
+          isOpen={isSecurityPinOpen}
+          onClose={() => setIsSecurityPinOpen(false)}
         />
 
         {/* Global Search Dialog */}

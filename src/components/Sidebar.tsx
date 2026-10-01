@@ -2,13 +2,14 @@ import React from 'react';
 import { 
   LayoutDashboard, MapPin, Users, CalendarCheck, BookOpen, 
   Sparkles, GraduationCap, HeartHandshake, Home, PlaneTakeoff, 
-  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings
+  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings,
+  ArrowDownRight, ArrowUpRight
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, followUps } = useApp();
+  const { activeTab, setActiveTab, followUps, friendsComingIn, friendsGoingOut } = useApp();
 
   const pendingFollowUps = followUps.filter(f => f.status === 'Pending' || f.status === 'In Progress').length;
 
@@ -16,6 +17,8 @@ export const Sidebar: React.FC = () => {
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'localities', label: 'Localities', icon: MapPin },
     { id: 'people', label: 'People / Friends', icon: Users },
+    { id: 'friendscomingin', label: 'Friends Coming In', icon: ArrowDownRight, badge: friendsComingIn.length },
+    { id: 'friendsgoingout', label: 'Friends Going Out', icon: ArrowUpRight, badge: friendsGoingOut.length },
     { id: 'activities', label: 'Activities', icon: CalendarCheck },
     { id: 'studycircles', label: 'Study Circles', icon: BookOpen },
     { id: 'childrensclasses', label: 'Children\'s Classes', icon: Sparkles },
@@ -58,7 +61,7 @@ export const Sidebar: React.FC = () => {
               </div>
               {item.badge !== undefined && item.badge > 0 && (
                 <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                  isActive ? 'bg-emerald-800 text-white' : 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
+                  isActive ? 'bg-emerald-800 text-white' : 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                 }`}>
                   {item.badge}
                 </span>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Users, UserPlus, MapPin, BookOpen, Sparkles, GraduationCap, 
   HeartHandshake, Home, Calendar, AlertCircle, PlaneTakeoff, 
-  HelpCircle, ArrowUpRight, TrendingUp, Filter, ChevronRight, CheckCircle
+  HelpCircle, ArrowUpRight, ArrowDownRight, TrendingUp, Filter, ChevronRight, CheckCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
@@ -15,6 +15,7 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
     localities, people, activities, studyCircles, 
     childrenClasses, juniorYouthGroups, devotionals, 
     homeVisits, serviceVisits, newBahais, followUps, 
+    friendsComingIn, friendsGoingOut,
     cycles, currentCycleId, dateFilter, setDateFilter, 
     selectedLocalityFilter, setSelectedLocalityFilter,
     setActiveTab 
@@ -108,7 +109,8 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
   // Stat Card Item List
   const statCards = [
     { title: 'Total Bahá’ís', value: totalBahais, icon: Users, color: 'emerald', tab: 'localities' as const },
-    { title: 'New Bahá’ís', value: totalNewBahais, icon: UserPlus, color: 'blue', tab: 'newbahais' as const },
+    { title: 'Friends Coming In', value: friendsComingIn.length, icon: ArrowDownRight, color: 'teal', tab: 'friendscomingin' as const },
+    { title: 'Friends Going Out', value: friendsGoingOut.length, icon: ArrowUpRight, color: 'amber', tab: 'friendsgoingout' as const },
     { title: 'Active Localities', value: activeLocalitiesCount, icon: MapPin, color: 'teal', tab: 'localities' as const },
     { title: 'Study Circles', value: studyCirclesCount, icon: BookOpen, color: 'indigo', tab: 'studycircles' as const },
     { title: 'Children’s Classes', value: childrenClassesCount, icon: Sparkles, color: 'amber', tab: 'childrensclasses' as const },

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { 
   Settings, Shield, Moon, Sun, Download, Upload, 
-  RotateCcw, History, FileJson, Check, AlertTriangle 
+  RotateCcw, History, FileJson, Check, AlertTriangle,
+  Lock, Unlock, KeyRound, CheckCircle2 
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
@@ -9,18 +10,46 @@ import { UserRole } from '../../types';
 export const SettingsView: React.FC = () => {
   const { 
     userRole, setUserRole, theme, toggleTheme, 
-    exportDataJSON, importDataJSON, resetDemoData, auditLogs 
+    exportDataJSON, importDataJSON, resetDemoData, auditLogs,
+    isSecurityUnlocked, verifyAndUnlock, lockSensitiveData,
+    maskSensitiveData, setMaskSensitiveData, changeSecurityPin 
   } = useApp();
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
 
-  const roles: { role: UserRole; desc: string }[] = [
-    { role: 'Cluster Coordinator', desc: 'Full access to view, edit, add, delete and manage cycles & settings.' },
-    { role: 'Administrator', desc: 'System management, role management, and full data access.' },
-    { role: 'Activity Coordinator', desc: 'Can manage core activities, people rosters, and local records.' },
-    { role: 'Tutor/Animator/Teacher', desc: 'Can record and update assigned groups, study circles, and home visits.' },
-    { role: 'Viewer', desc: 'Read-only access for cluster consultation and reporting review.' },
+  // Security PIN states
+  const [pinChangeOpen, setPinChangeOpen] = useState(false);
+  const [newPin, setNewPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinMessage, setPinMessage] = useState<string | null>(null);
+
+  const roles: { role: UserRole; desc: string; permissions: string[] }[] = [
+    { 
+      role: 'Administrator', 
+      desc: 'Full control over system settings, user roles, security PIN reset, and unmasked data view.',
+      permissions: ['Enter & Edit All Data', 'View Protected Contacts', 'Export/Import Backups', 'Manage System PIN']
+    },
+    { 
+      role: 'Cluster Coordinator', 
+      desc: 'Central coordination: enter activities, manage cycle goals, run formal 10-section reports.',
+      permissions: ['Enter & Batch Add Data', 'Generate & Print Reports', 'Unlock Contact Details', 'Manage Groups']
+    },
+    { 
+      role: 'Activity Coordinator', 
+      desc: 'Coordinate core institute activities, manage children, junior youth, and study groups.',
+      permissions: ['Batch Add Group Participants', 'Update Group Progress', 'View Local Rosters']
+    },
+    { 
+      role: 'Tutor/Animator/Teacher', 
+      desc: 'Record and update assigned classes, study circles, home visits, and group attendance.',
+      permissions: ['Update Assigned Sessions', 'Record Attendance', 'Submit Follow-ups']
+    },
+    { 
+      role: 'Viewer', 
+      desc: 'Read-only access for cluster reflection meetings, community consultation, and review.',
+      permissions: ['Read-only View', 'View Summary Reports', 'No Editing Permissions']
+    },
   ];
 
   const handleExport = () => {
@@ -61,16 +90,36 @@ export const SettingsView: React.FC = () => {
     setTimeout(() => setImportStatus(null), 4000);
   };
 
+  const handleSaveNewPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinMessage(null);
+    if (newPin.length < 4) {
+      setPinMessage('Error: PIN must be at least 4 digits.');
+      return;
+    }
+    if (newPin !== confirmPin) {
+      setPinMessage('Error: PINs do not match.');
+      return;
+    }
+
+    await changeSecurityPin(newPin);
+    setPinMessage('Success: Master PIN updated.');
+    setNewPin('');
+    setConfirmPin('');
+    setPinChangeOpen(false);
+    setTimeout(() => setPinMessage(null), 3000);
+  };
+
   return (
     <div className="space-y-6 pb-12">
       {/* Header */}
       <div>
         <div className="flex items-center gap-2">
           <Settings className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings & Data Management</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Settings & Access Control</h1>
         </div>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Configure active user role, theme preferences, local data backup, and system audit logs.
+          Role-based access permissions, contact data protection, theme preferences, and offline data backups.
         </p>
       </div>
 
@@ -81,38 +130,159 @@ export const SettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Role Selection */}
+      {pinMessage && (
+        <div className="p-4 rounded-xl bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-200 border border-blue-300 dark:border-blue-800 text-sm font-medium flex items-center gap-2">
+          <KeyRound className="w-5 h-5 text-blue-600" />
+          <span>{pinMessage}</span>
+        </div>
+      )}
+
+      {/* Role-Based Access Control Section */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Access Role (Local Simulation)</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Role-Based Access Control</h2>
+          </div>
+          <span className="text-xs px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold">
+            Current: {userRole}
+          </span>
         </div>
         <p className="text-xs text-slate-500">
-          Select a role to test permission levels and access restrictions throughout Kimana Cluster Tracker.
+          Select an active authorization role to simulate data entry, reporting, and review capabilities.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-          {roles.map(({ role, desc }) => {
+          {roles.map(({ role, desc, permissions }) => {
             const isSelected = userRole === role;
             return (
               <div
                 key={role}
                 onClick={() => setUserRole(role)}
-                className={`p-4 rounded-xl border cursor-pointer transition ${
+                className={`p-4 rounded-xl border cursor-pointer transition flex flex-col justify-between ${
                   isSelected
                     ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 ring-2 ring-emerald-500/20'
                     : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                 }`}
                 id={`role-option-${role.replace(/\s+/g, '-').toLowerCase()}`}
               >
-                <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white text-sm">
-                  <span>{role}</span>
-                  {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
+                <div>
+                  <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white text-sm">
+                    <span>{role}</span>
+                    {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
+
+                <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800/60 flex flex-wrap gap-1">
+                  {permissions.map((p, idx) => (
+                    <span key={idx} className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      ✓ {p}
+                    </span>
+                  ))}
+                </div>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Sensitive Contact Information Security & PIN */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lock className="w-5 h-5 text-amber-500" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+              Sensitive Contact Privacy Protection
+            </h2>
+          </div>
+          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+            isSecurityUnlocked
+              ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+              : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+          }`}>
+            {isSecurityUnlocked ? 'Contacts Unlocked' : 'Contacts Masked'}
+          </span>
+        </div>
+        <p className="text-xs text-slate-500">
+          Personal telephone numbers, parent contacts, and pastoral notes are shielded from unauthorized viewers.
+          Default Master PIN: <code className="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded font-mono font-bold">1844</code>
+        </p>
+
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
+              Default Masking Mode
+            </span>
+            <p className="text-xs text-slate-500">
+              When enabled, contacts show as <code>Protected (••••)</code> unless unlocked with the security PIN.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => isSecurityUnlocked ? lockSensitiveData() : verifyAndUnlock('1844')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                isSecurityUnlocked
+                  ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              }`}
+            >
+              {isSecurityUnlocked ? 'Lock Now' : 'Quick Unlock (1844)'}
+            </button>
+          </div>
+        </div>
+
+        {/* Change Master PIN Section */}
+        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+          {!pinChangeOpen ? (
+            <button
+              onClick={() => setPinChangeOpen(true)}
+              className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold hover:underline flex items-center gap-1.5"
+            >
+              <KeyRound className="w-4 h-4" />
+              <span>Configure Security Master PIN</span>
+            </button>
+          ) : (
+            <form onSubmit={handleSaveNewPin} className="space-y-3 max-w-sm pt-2">
+              <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                Update Master PIN (Min. 4 characters):
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="password"
+                  required
+                  placeholder="New PIN"
+                  value={newPin}
+                  onChange={(e) => setNewPin(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                />
+                <input
+                  type="password"
+                  required
+                  placeholder="Confirm PIN"
+                  value={confirmPin}
+                  onChange={(e) => setConfirmPin(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPinChangeOpen(false)}
+                  className="px-3 py-1 text-xs text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm"
+                >
+                  Save PIN
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       </div>
 
@@ -141,7 +311,7 @@ export const SettingsView: React.FC = () => {
           Offline Data Backup & Synchronization
         </h2>
         <p className="text-xs text-slate-500">
-          All Kimana Cluster data is saved locally on your device. Export JSON backups to keep data safe or transfer to other devices.
+          All Kimana Cluster data is saved locally on your device. Export JSON backups to keep data safe or transfer to other cluster coordinators.
         </p>
 
         <div className="flex flex-wrap gap-3 pt-2">

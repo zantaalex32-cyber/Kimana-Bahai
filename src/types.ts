@@ -268,6 +268,91 @@ export interface AuditLog {
   details: string;
 }
 
+export interface FriendComingIn {
+  id: string;
+  fullName: string;
+  age?: number;
+  gender?: 'Female' | 'Male' | 'Other';
+  contact: string;
+  localityId: string;
+  localityName: string;
+  neighborhood?: string;
+  date: string; // YYYY-MM-DD
+  howReached: string; // e.g. "Teaching Campaign", "Home Visit", "Family/Friend Introduction", "Devotional Meeting", "Youth Activity", "Other"
+  introducedBy: string; // Person or family who introduced them
+  activitiesParticipating: string[];
+  currentStatus: 'Needs Initial Visit' | 'Enrolled in Ruhi B1' | 'Attending Devotionals' | 'Well Integrated' | 'Children Class Parent';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FriendGoingOut {
+  id: string;
+  fullName: string;
+  age?: number;
+  contact: string;
+  previousLocalityId: string;
+  previousLocalityName: string;
+  previousNeighborhood?: string;
+  newLocation: string; // e.g. "Nairobi Cluster", "Machakos", "Loitokitok", "Abroad"
+  date: string; // YYYY-MM-DD
+  reason: 'Relocation' | 'Pioneer' | 'University/Education' | 'Employment/Work' | 'Marriage' | 'Family Reasons' | 'Other';
+  activitiesPreviouslyInvolved: string[]; // e.g. ["Children Class Teacher", "Ruhi Book 4 Participant"]
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ParticipantRecord {
+  id: string;
+  name: string;
+  age?: number;
+  gender?: 'Female' | 'Male' | 'Other';
+  parentName?: string;
+  parentContact?: string;
+  contact?: string;
+  neighborhood?: string;
+  localityName?: string;
+  classOrGrade?: string;
+  bookOrCourse?: string;
+  groupName?: string;
+  dateJoined?: string;
+  status: 'Active' | 'New' | 'Returning' | 'Inactive';
+  notes?: string;
+}
+
+export interface ReportPlan {
+  id: string;
+  cycleId: string;
+  category: 'Teaching & Expansion' | 'Institute & Study Circles' | 'Children & Junior Youth' | 'Devotional & Feasts';
+  goalDescription: string;
+  targetDate: string;
+  responsiblePerson: string;
+  status: 'Draft' | 'Approved' | 'In Action' | 'Completed';
+}
+
+export interface ReportChallenge {
+  id: string;
+  cycleId: string;
+  area: string;
+  description: string;
+  severity: 'High' | 'Medium' | 'Low';
+  proposedAction: string;
+}
+
+export interface ReportPioneer {
+  id: string;
+  name: string;
+  type: 'Inbound Pioneer' | 'Outbound Pioneer' | 'Short-Term Travel Teacher' | 'Long-Term Pioneer';
+  origin: string;
+  destination: string;
+  period: string;
+  focusArea: string;
+  contact: string;
+  status: 'Active' | 'Completed' | 'Planned';
+}
+
 export type NavigationTab = 
   | 'dashboard'
   | 'localities'
@@ -278,6 +363,8 @@ export type NavigationTab =
   | 'junioryouth'
   | 'devotionals'
   | 'homevisits'
+  | 'friendscomingin'
+  | 'friendsgoingout'
   | 'visits'
   | 'newbahais'
   | 'calendar'
