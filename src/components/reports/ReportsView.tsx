@@ -33,11 +33,11 @@ export const ReportsView: React.FC = () => {
   const totalJYParticipants = activeJYGroups.reduce((sum, j) => sum + j.averageAttendance, 0);
 
   // Growth & Goal Analysis for Selected Cycle
-  const scGoal = activeCycle?.goals.studyCirclesGoal || 0;
-  const ccGoal = activeCycle?.goals.childrenClassesGoal || 0;
-  const jyGoal = activeCycle?.goals.juniorYouthGroupsGoal || 0;
-  const devGoal = activeCycle?.goals.devotionalsGoal || 0;
-  const newBahaisGoal = activeCycle?.goals.newBahaisGoal || 0;
+  const scGoal = activeCycle?.goals?.studyCirclesGoal || 0;
+  const ccGoal = activeCycle?.goals?.childrenClassesGoal || 0;
+  const jyGoal = activeCycle?.goals?.juniorYouthGroupsGoal || 0;
+  const devGoal = activeCycle?.goals?.devotionalsGoal || 0;
+  const newBahaisGoal = activeCycle?.goals?.newBahaisGoal || 0;
 
   const generateTextSummary = () => {
     return `
@@ -128,18 +128,22 @@ Kimana Cluster Tracker - Kajiado South, Kenya
           className="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           id="report-cycle-select"
         >
-          {cycles.map(c => (
-            <option key={c.id} value={c.id}>
-              {c.name} ({c.startDate} to {c.endDate})
-            </option>
-          ))}
+          {cycles.length === 0 ? (
+            <option value="">No cycle defined</option>
+          ) : (
+            cycles.map(c => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.startDate} to {c.endDate})
+              </option>
+            ))
+          )}
         </select>
       </div>
 
       {/* Core Activities Progress Cards (Goal vs Actual) */}
       <div>
         <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-3">
-          Goal Progress ({activeCycle?.name})
+          Goal Progress ({activeCycle?.name || 'All Cycles'})
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
@@ -242,31 +246,39 @@ Kimana Cluster Tracker - Kajiado South, Kenya
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {localities.map((loc) => (
-                <tr key={loc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
-                  <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
-                    {loc.name}
-                  </td>
-                  <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">
-                    {loc.bahaiCount}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                    {loc.householdsCount}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                    {loc.studyCirclesCount}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                    {loc.childrenClassesCount}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                    {loc.juniorYouthGroupsCount}
-                  </td>
-                  <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
-                    {loc.devotionalMeetingsCount}
+              {localities.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-8 text-center text-slate-400 dark:text-slate-500">
+                    No localities recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                localities.map((loc) => (
+                  <tr key={loc.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                    <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                      {loc.name}
+                    </td>
+                    <td className="py-3 px-4 font-bold text-emerald-600 dark:text-emerald-400">
+                      {loc.bahaiCount}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      {loc.householdsCount}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      {loc.studyCirclesCount}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      {loc.childrenClassesCount}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      {loc.juniorYouthGroupsCount}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 dark:text-slate-300">
+                      {loc.devotionalMeetingsCount}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

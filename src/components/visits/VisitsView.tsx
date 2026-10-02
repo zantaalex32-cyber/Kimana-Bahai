@@ -13,10 +13,10 @@ export const VisitsView: React.FC = () => {
     direction: 'Outbound' as 'Outbound' | 'Inbound',
     personName: '',
     origin: 'Kimana Town',
-    destination: 'Rombo Locality',
-    purpose: 'Facilitate Study Circle / Institute Workshop',
-    activityOrGroup: 'Ruhi Book 3 Workshop',
-    responsiblePerson: 'Daniel Nkopio',
+    destination: '',
+    purpose: '',
+    activityOrGroup: '',
+    responsiblePerson: '',
     startDate: new Date().toISOString().split('T')[0],
     endDate: '',
     status: 'Planned' as 'Planned' | 'In Progress' | 'Completed' | 'Cancelled',
@@ -33,11 +33,11 @@ export const VisitsView: React.FC = () => {
     setFormData({
       direction: dir,
       personName: '',
-      origin: dir === 'Outbound' ? 'Kimana Town' : 'Nairobi Cluster',
-      destination: dir === 'Outbound' ? 'Loitokitok / Kajiado Cluster' : 'Kimana Town',
-      purpose: 'Service & Institute Activity Support',
-      activityOrGroup: 'Institute Course',
-      responsiblePerson: 'Coordinator',
+      origin: dir === 'Outbound' ? 'Kimana Town' : '',
+      destination: dir === 'Outbound' ? '' : 'Kimana Town',
+      purpose: '',
+      activityOrGroup: '',
+      responsiblePerson: '',
       startDate: new Date().toISOString().split('T')[0],
       endDate: '',
       status: 'Planned',
@@ -160,8 +160,17 @@ export const VisitsView: React.FC = () => {
       </div>
 
       {/* Visits List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVisits.map((v) => (
+      {filteredVisits.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <PlaneTakeoff className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No visits or travel records found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {directionFilter !== 'all' ? 'Try switching the direction filter.' : 'Record outbound travelling teachers or inbound visiting friends.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVisits.map((v) => (
           <div key={v.id} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -220,6 +229,7 @@ export const VisitsView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (

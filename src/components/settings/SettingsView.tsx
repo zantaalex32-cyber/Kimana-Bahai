@@ -9,7 +9,7 @@ import { UserRole } from '../../types';
 export const SettingsView: React.FC = () => {
   const { 
     userRole, setUserRole, theme, toggleTheme, 
-    exportDataJSON, importDataJSON, resetDemoData, auditLogs 
+    exportDataJSON, importDataJSON, clearAllData, auditLogs 
   } = useApp();
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
@@ -55,9 +55,9 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleReset = () => {
-    resetDemoData();
+    clearAllData();
     setShowConfirmReset(false);
-    setImportStatus('App reset to initial Kimana Cluster demo state.');
+    setImportStatus('All data and test records have been completely cleared.');
     setTimeout(() => setImportStatus(null), 4000);
   };
 
@@ -172,7 +172,7 @@ export const SettingsView: React.FC = () => {
             id="reset-demo-button"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Reset Demo Data</span>
+            <span>Clear All Data (Clean Slate)</span>
           </button>
         </div>
       </div>
@@ -213,10 +213,10 @@ export const SettingsView: React.FC = () => {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3 text-rose-600">
               <AlertTriangle className="w-6 h-6" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Reset Demo Data?</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Clear All Data?</h3>
             </div>
             <p className="text-sm text-slate-600 dark:text-slate-300">
-              This will overwrite all current changes and restore the initial sample dataset for Kimana Cluster.
+              This will permanently delete all stored activities, friends, study circles, classes, visits, follow-up items, and test records. The application will be reset to a clean, empty state.
             </p>
             <div className="flex justify-end gap-3 pt-2">
               <button
@@ -229,7 +229,7 @@ export const SettingsView: React.FC = () => {
                 onClick={handleReset}
                 className="px-4 py-2 rounded-xl text-sm font-semibold bg-rose-600 text-white hover:bg-rose-700 shadow-sm"
               >
-                Yes, Reset Data
+                Yes, Clear All Data
               </button>
             </div>
           </div>

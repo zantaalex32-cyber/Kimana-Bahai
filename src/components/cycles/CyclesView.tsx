@@ -101,8 +101,26 @@ export const CyclesView: React.FC = () => {
       </div>
 
       {/* Cycle List */}
-      <div className="space-y-4">
-        {cycles.map((cycle) => {
+      {cycles.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <RotateCw className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No Growth Cycles Defined</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            Growth cycles help coordinate expansion, consolidation, and reflection phases across the cluster.
+          </p>
+          {(userRole === 'Cluster Coordinator' || userRole === 'Administrator') && (
+            <button
+              onClick={handleOpenCreate}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl shadow-sm transition"
+            >
+              <Plus className="w-4 h-4" />
+              Create First Cycle
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {cycles.map((cycle) => {
           const isSelected = cycle.id === currentCycleId;
 
           return (
@@ -211,7 +229,8 @@ export const CyclesView: React.FC = () => {
             </div>
           );
         })}
-      </div>
+        </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (

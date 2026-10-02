@@ -203,8 +203,19 @@ export const PeopleView: React.FC = () => {
       </div>
 
       {/* Friends Cards / Table */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredPeople.map((p) => (
+      {filteredPeople.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Users className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No friends or believers found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm || roleFilter !== 'all' || localityFilter !== 'all'
+              ? 'Try adjusting your filters.'
+              : 'Add members to the administrative roster to begin tracking serving believers.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filteredPeople.map((p) => (
           <div
             key={p.id}
             className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -292,6 +303,7 @@ export const PeopleView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Add / Edit Person Modal */}
       {isModalOpen && (
@@ -309,7 +321,7 @@ export const PeopleView: React.FC = () => {
                   required
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Samuel Kitiyo"
+                  placeholder="e.g. Full Name"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>
@@ -322,9 +334,13 @@ export const PeopleView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
 

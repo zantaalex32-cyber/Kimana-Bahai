@@ -55,13 +55,13 @@ export const StudyCirclesView: React.FC = () => {
     setFormData({
       groupName: '',
       bookMaterial: 'Ruhi Book 1 - Reflection on the Life of the Spirit',
-      tutorName: 'Grace Sian',
+      tutorName: '',
       localityId: localities[0]?.id || '',
-      meetingLocation: 'Kimana Center',
-      meetingSchedule: 'Wednesdays at 2:00 PM',
+      meetingLocation: '',
+      meetingSchedule: '',
       startDate: new Date().toISOString().split('T')[0],
-      progress: 'Unit 1, Section 1',
-      numberOfMeetings: 1,
+      progress: '',
+      numberOfMeetings: 0,
       isActive: true,
       isExternal: false,
       externalLocation: '',
@@ -189,8 +189,19 @@ export const StudyCirclesView: React.FC = () => {
       </div>
 
       {/* Study Circles Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredCircles.map((sc) => (
+      {filteredCircles.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <BookOpen className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No study circles found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm || localityFilter !== 'all'
+              ? 'Try adjusting your filters.'
+              : 'Add an institute study circle to begin tracking courses.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredCircles.map((sc) => (
           <div
             key={sc.id}
             className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
@@ -256,6 +267,7 @@ export const StudyCirclesView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
@@ -309,9 +321,13 @@ export const StudyCirclesView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

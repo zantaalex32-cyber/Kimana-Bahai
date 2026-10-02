@@ -46,14 +46,14 @@ export const JuniorYouthView: React.FC = () => {
     setFormData({
       groupName: '',
       localityId: localities[0]?.id || '',
-      animatorName: 'Emmanuel Kibet',
+      animatorName: '',
       currentMaterial: 'Breezes of Confirmation',
-      progress: 'Chapter 1',
-      meetingSchedule: 'Thursdays at 4:30 PM',
-      numberOfMeetings: 8,
-      averageAttendance: 12,
+      progress: '',
+      meetingSchedule: '',
+      numberOfMeetings: 0,
+      averageAttendance: 0,
       members: '',
-      serviceProjects: 'Tree planting at primary school',
+      serviceProjects: '',
       isActive: true,
       notes: ''
     });
@@ -146,8 +146,18 @@ export const JuniorYouthView: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredGroups.map((jy) => (
+      {/* JY Groups Grid */}
+      {filteredGroups.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <GraduationCap className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No junior youth groups found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm ? 'Try adjusting your search.' : 'Form a junior youth group to begin accompanying youth in service.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredGroups.map((jy) => (
           <div key={jy.id} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -207,6 +217,7 @@ export const JuniorYouthView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
@@ -247,9 +258,13 @@ export const JuniorYouthView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

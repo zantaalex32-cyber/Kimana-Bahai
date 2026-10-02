@@ -30,14 +30,14 @@ export const DevotionalsView: React.FC = () => {
   const handleOpenCreate = () => {
     setEditingDev(null);
     setFormData({
-      title: 'Weekly Devotional Meeting',
-      hostName: 'Grace Sian',
+      title: '',
+      hostName: '',
       localityId: localities[0]?.id || '',
       date: new Date().toISOString().split('T')[0],
       time: '18:00',
-      themeTopic: 'Unity & Prayer',
-      participantsCount: 12,
-      description: 'Devotional prayers and spiritual reflections.',
+      themeTopic: '',
+      participantsCount: 0,
+      description: '',
       notes: ''
     });
     setIsModalOpen(true);
@@ -118,8 +118,18 @@ export const DevotionalsView: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDevotionals.map((dev) => (
+      {/* Devotionals Grid */}
+      {filteredDevotionals.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <HeartHandshake className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No devotional gatherings found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm ? 'Try adjusting your search.' : 'Record devotional meetings and prayer gatherings across localities.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredDevotionals.map((dev) => (
           <div key={dev.id} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -160,6 +170,7 @@ export const DevotionalsView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
@@ -200,9 +211,13 @@ export const DevotionalsView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

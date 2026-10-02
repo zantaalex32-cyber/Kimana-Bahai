@@ -69,9 +69,9 @@ export const ActivitiesView: React.FC = () => {
       startTime: '10:00',
       endTime: '12:00',
       localityId: localities[0]?.id || '',
-      venue: 'Community Center',
-      personResponsible: 'Daniel Nkopio',
-      expectedParticipants: 15,
+      venue: '',
+      personResponsible: '',
+      expectedParticipants: 0,
       actualAttendance: 0,
       description: '',
       followUpRequired: false,
@@ -236,8 +236,19 @@ export const ActivitiesView: React.FC = () => {
       </div>
 
       {/* Activity List */}
-      <div className="space-y-3">
-        {filteredActivities.map((act) => (
+      {filteredActivities.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <CalendarCheck className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No activities found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm || typeFilter !== 'all' || localityFilter !== 'all' || statusFilter !== 'all'
+              ? 'Try adjusting your filters.'
+              : 'Record or schedule community activities to begin tracking.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredActivities.map((act) => (
           <div
             key={act.id}
             className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
@@ -305,6 +316,7 @@ export const ActivitiesView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
@@ -348,9 +360,13 @@ export const ActivitiesView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>
@@ -402,7 +418,7 @@ export const ActivitiesView: React.FC = () => {
                     type="text"
                     value={formData.personResponsible}
                     onChange={e => setFormData({ ...formData, personResponsible: e.target.value })}
-                    placeholder="e.g. Grace Sian"
+                    placeholder="e.g. Facilitator or Host Name"
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>

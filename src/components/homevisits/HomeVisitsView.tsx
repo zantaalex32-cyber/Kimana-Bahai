@@ -33,10 +33,10 @@ export const HomeVisitsView: React.FC = () => {
     setFormData({
       familyOrPersonVisited: '',
       localityId: localities[0]?.id || '',
-      visitors: 'Samuel Kitiyo, Grace Sian',
+      visitors: '',
       date: new Date().toISOString().split('T')[0],
-      purpose: 'Spiritual encouragement & introduction to core activities',
-      outcome: 'Warm reception. Invited family to weekly devotional.',
+      purpose: '',
+      outcome: '',
       followUpNeeded: false,
       followUpDate: '',
       isSensitive: false,
@@ -124,8 +124,18 @@ export const HomeVisitsView: React.FC = () => {
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredVisits.map((hv) => (
+      {/* Home Visits Grid */}
+      {filteredVisits.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Home className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No home visits recorded</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm ? 'Try adjusting your search.' : 'Record pastoral and deepening visits to families and individuals.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredVisits.map((hv) => (
           <div key={hv.id} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -183,6 +193,7 @@ export const HomeVisitsView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Modal */}
       {isModalOpen && (
@@ -213,9 +224,13 @@ export const HomeVisitsView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
                 <div>
@@ -236,7 +251,7 @@ export const HomeVisitsView: React.FC = () => {
                   required
                   value={formData.visitors}
                   onChange={e => setFormData({ ...formData, visitors: e.target.value })}
-                  placeholder="Daniel, Grace, Samuel"
+                  placeholder="e.g. Visitor names"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>

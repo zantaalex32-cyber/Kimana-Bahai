@@ -7,7 +7,7 @@ import { useApp } from '../../context/AppContext';
 import { Locality } from '../../types';
 
 export const LocalitiesView: React.FC = () => {
-  const { localities, addLocality, updateLocality, deleteLocality, userRole } = useApp();
+  const { localities, addLocality, updateLocality, deleteLocality, userRole, loadKimanaLocalities } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingLocality, setEditingLocality] = useState<Locality | null>(null);
@@ -35,12 +35,12 @@ export const LocalitiesView: React.FC = () => {
     setEditingLocality(null);
     setFormData({
       name: '',
-      bahaiCount: 10,
-      householdsCount: 4,
-      childrenClassesCount: 1,
-      juniorYouthGroupsCount: 1,
-      studyCirclesCount: 1,
-      devotionalMeetingsCount: 2,
+      bahaiCount: 0,
+      householdsCount: 0,
+      childrenClassesCount: 0,
+      juniorYouthGroupsCount: 0,
+      studyCirclesCount: 0,
+      devotionalMeetingsCount: 0,
       humanResources: '',
       notes: ''
     });
@@ -136,105 +136,140 @@ export const LocalitiesView: React.FC = () => {
       </div>
 
       {/* Grid of Localities */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredLocalities.map((loc) => (
-          <div
-            key={loc.id}
-            className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
-            id={`locality-card-${loc.id}`}
-          >
-            <div>
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
-                    <MapPin className="w-4 h-4" />
+      {filteredLocalities.length === 0 ? (
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-10 border border-slate-200 dark:border-slate-800 text-center space-y-4">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center">
+            <MapPin className="w-6 h-6" />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">
+              {searchTerm ? 'No matching localities found' : 'No Localities Registered'}
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {searchTerm
+                ? 'Try adjusting your search keyword.'
+                : 'All test data has been removed. You can create a new custom locality or initialize the official Kimana Cluster localities with zero data.'}
+            </p>
+          </div>
+          {!searchTerm && userRole !== 'Viewer' && (
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={handleOpenCreate}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                Add New Locality
+              </button>
+              <button
+                onClick={loadKimanaLocalities}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs transition"
+              >
+                Initialize Kimana Cluster Localities (Clean)
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredLocalities.map((loc) => (
+            <div
+              key={loc.id}
+              className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between"
+              id={`locality-card-${loc.id}`}
+            >
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center font-bold">
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-slate-900 dark:text-white text-base">{loc.name}</h3>
+                      <p className="text-xs text-slate-500">Kimana Cluster</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white text-base">{loc.name}</h3>
-                    <p className="text-xs text-slate-500">Kimana Cluster</p>
+
+                  {userRole !== 'Viewer' && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenEdit(loc)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        title="Edit Locality"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      {userRole === 'Administrator' && (
+                        <button
+                          onClick={() => {
+                            if (confirm(`Are you sure you want to delete ${loc.name}?`)) {
+                              deleteLocality(loc.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
+                          title="Delete Locality"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-2 my-4">
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-500 font-medium">Bahá'í Population</span>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{loc.bahaiCount} friends</p>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-500 font-medium">Households</span>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">{loc.householdsCount} families</p>
                   </div>
                 </div>
 
-                {userRole !== 'Viewer' && (
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => handleOpenEdit(loc)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                      title="Edit Locality"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    {userRole === 'Administrator' && (
-                      <button
-                        onClick={() => {
-                          if (confirm(`Are you sure you want to delete ${loc.name}?`)) {
-                            deleteLocality(loc.id);
-                          }
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        title="Delete Locality"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
+                {/* Activities Breakdown */}
+                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
+                  <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Children's Classes</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{loc.childrenClassesCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 text-purple-500" /> Junior Youth Groups</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{loc.juniorYouthGroupsCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
+                    <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5 text-blue-500" /> Study Circles</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{loc.studyCirclesCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="flex items-center gap-1.5"><HeartHandshake className="w-3.5 h-3.5 text-rose-500" /> Devotional Meetings</span>
+                    <span className="font-bold text-slate-900 dark:text-white">{loc.devotionalMeetingsCount}</span>
+                  </div>
+                </div>
+
+                {/* Serving Friends */}
+                {loc.humanResources.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                    <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
+                      Serving Friends:
+                    </span>
+                    <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">
+                      {loc.humanResources.join(' • ')}
+                    </p>
                   </div>
                 )}
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 gap-2 my-4">
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] text-slate-500 font-medium">Bahá'í Population</span>
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{loc.bahaiCount} friends</p>
-                </div>
-                <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] text-slate-500 font-medium">Households</span>
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">{loc.householdsCount} families</p>
-                </div>
-              </div>
-
-              {/* Activities Breakdown */}
-              <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
-                <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
-                  <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-amber-500" /> Children's Classes</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{loc.childrenClassesCount}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
-                  <span className="flex items-center gap-1.5"><GraduationCap className="w-3.5 h-3.5 text-purple-500" /> Junior Youth Groups</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{loc.juniorYouthGroupsCount}</span>
-                </div>
-                <div className="flex justify-between items-center py-1 border-b border-slate-50 dark:border-slate-800">
-                  <span className="flex items-center gap-1.5"><BookOpen className="w-3.5 h-3.5 text-blue-500" /> Study Circles</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{loc.studyCirclesCount}</span>
-                </div>
-                <div className="flex justify-between items-center py-1">
-                  <span className="flex items-center gap-1.5"><HeartHandshake className="w-3.5 h-3.5 text-rose-500" /> Devotional Meetings</span>
-                  <span className="font-bold text-slate-900 dark:text-white">{loc.devotionalMeetingsCount}</span>
-                </div>
-              </div>
-
-              {/* Serving Friends */}
-              {loc.humanResources.length > 0 && (
-                <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">
-                    Serving Friends:
-                  </span>
-                  <p className="text-xs font-medium text-slate-700 dark:text-slate-300 mt-1">
-                    {loc.humanResources.join(' • ')}
-                  </p>
-                </div>
-              )}
+              <button
+                onClick={() => setSelectedLocality(loc)}
+                className="mt-4 w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition"
+              >
+                View Locality Profile
+              </button>
             </div>
-
-            <button
-              onClick={() => setSelectedLocality(loc)}
-              className="mt-4 w-full py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-200 transition"
-            >
-              View Locality Profile
-            </button>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {isModalOpen && (
@@ -326,7 +361,7 @@ export const LocalitiesView: React.FC = () => {
                   type="text"
                   value={formData.humanResources}
                   onChange={e => setFormData({ ...formData, humanResources: e.target.value })}
-                  placeholder="Daniel Nkopio, Grace Sian, Samuel Kitiyo"
+                  placeholder="e.g. Local teachers, animators, tutors"
                   className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                 />
               </div>

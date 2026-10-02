@@ -1,7 +1,8 @@
 import React from 'react';
 import { 
   Search, Plus, Moon, Sun, Menu, X, Shield, 
-  MapPin, Calendar, Activity, UserPlus, FileText
+  MapPin, Calendar, Activity, UserPlus, FileText,
+  Lock, Unlock, Users
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
@@ -9,12 +10,20 @@ import { UserRole } from '../types';
 interface HeaderProps {
   onOpenMobileMenu: () => void;
   onQuickRecord: () => void;
+  onOpenMultiEntry?: () => void;
+  onOpenSecurityPin?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onQuickRecord }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onOpenMobileMenu, 
+  onQuickRecord,
+  onOpenMultiEntry,
+  onOpenSecurityPin
+}) => {
   const { 
     userRole, setUserRole, theme, toggleTheme, 
-    setIsSearchOpen, activeTab, setActiveTab 
+    setIsSearchOpen, activeTab, setActiveTab,
+    isSecurityUnlocked, maskSensitiveData 
   } = useApp();
 
   const roles: UserRole[] = [
@@ -26,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onQuickRecord 
   ];
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <header className="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Left: Mobile Menu Button & Brand */}
@@ -79,8 +88,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onQuickRecord 
           </button>
         </div>
 
-        {/* Right: Actions, Role Selector & Theme Toggle */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right: Actions, Security Lock, Role Selector & Theme Toggle */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           
           {/* Quick Search Mobile Icon */}
           <button
@@ -91,6 +100,35 @@ export const Header: React.FC<HeaderProps> = ({ onOpenMobileMenu, onQuickRecord 
           >
             <Search className="w-5 h-5" />
           </button>
+
+          {/* Contact Security Privacy Badge Button */}
+          {onOpenSecurityPin && (
+            <button
+              onClick={onOpenSecurityPin}
+              title={isSecurityUnlocked ? 'Contacts Unlocked (Click to manage privacy PIN)' : 'Sensitive Contacts Masked (Click to unlock)'}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                isSecurityUnlocked
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100'
+                  : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100'
+              }`}
+              id="security-pin-btn"
+            >
+              {isSecurityUnlocked ? <Unlock className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">{isSecurityUnlocked ? 'Contacts Unlocked' : 'Contacts Protected'}</span>
+            </button>
+          )}
+
+          {/* Multi-Person Entry Button */}
+          {userRole !== 'Viewer' && onOpenMultiEntry && (
+            <button
+              onClick={onOpenMultiEntry}
+              className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition"
+              id="multi-person-entry-btn"
+            >
+              <Users className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Multi-Person Entry</span>
+            </button>
+          )}
 
           {/* Quick Record Button */}
           {userRole !== 'Viewer' && (

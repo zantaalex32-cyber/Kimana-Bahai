@@ -33,11 +33,11 @@ export const ChildrensClassesView: React.FC = () => {
     setFormData({
       className: '',
       localityId: localities[0]?.id || '',
-      teacherName: 'Faith Naipanoi',
+      teacherName: '',
       ageGroupLevel: 'Grade 1 (Ages 5-7)',
-      meetingSchedule: 'Sundays at 10:00 AM',
-      numberOfSessions: 10,
-      averageAttendance: 12,
+      meetingSchedule: '',
+      numberOfSessions: 0,
+      averageAttendance: 0,
       childrenNames: '',
       isActive: true,
       notes: ''
@@ -125,8 +125,17 @@ export const ChildrensClassesView: React.FC = () => {
       </div>
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredClasses.map((cc) => (
+      {filteredClasses.length === 0 ? (
+        <div className="text-center py-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <Sparkles className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+          <h3 className="font-medium text-slate-900 dark:text-white">No children's classes found</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            {searchTerm ? 'Try adjusting your search.' : 'Add a children\'s class to begin tracking moral education sessions.'}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClasses.map((cc) => (
           <div key={cc.id} className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -174,6 +183,7 @@ export const ChildrensClassesView: React.FC = () => {
           </div>
         ))}
       </div>
+      )}
 
       {/* Add / Edit Modal */}
       {isModalOpen && (
@@ -214,9 +224,13 @@ export const ChildrensClassesView: React.FC = () => {
                     onChange={e => setFormData({ ...formData, localityId: e.target.value })}
                     className="w-full p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white"
                   >
-                    {localities.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
+                    {localities.length === 0 ? (
+                      <option value="">No localities added yet</option>
+                    ) : (
+                      localities.map(l => (
+                        <option key={l.id} value={l.id}>{l.name}</option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

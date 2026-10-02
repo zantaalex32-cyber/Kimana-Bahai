@@ -9,26 +9,55 @@ import {
   INITIAL_JUNIOR_YOUTH_GROUPS, INITIAL_DEVOTIONALS, 
   INITIAL_HOME_VISITS, INITIAL_SERVICE_VISITS, 
   INITIAL_NEW_BAHAIS, INITIAL_FOLLOW_UPS, INITIAL_CYCLES, 
-  INITIAL_AUDIT_LOGS 
+  INITIAL_AUDIT_LOGS, DEFAULT_KIMANA_LOCALITIES 
 } from '../data/initialData';
 
 const KEYS = {
-  LOCALITIES: 'kimana_tracker_localities_v1',
-  PEOPLE: 'kimana_tracker_people_v1',
-  ACTIVITIES: 'kimana_tracker_activities_v1',
-  STUDY_CIRCLES: 'kimana_tracker_study_circles_v1',
-  CHILDREN_CLASSES: 'kimana_tracker_children_classes_v1',
-  JUNIOR_YOUTH: 'kimana_tracker_junior_youth_v1',
-  DEVOTIONALS: 'kimana_tracker_devotionals_v1',
-  HOME_VISITS: 'kimana_tracker_home_visits_v1',
-  SERVICE_VISITS: 'kimana_tracker_service_visits_v1',
-  NEW_BAHAIS: 'kimana_tracker_new_bahais_v1',
-  FOLLOW_UPS: 'kimana_tracker_follow_ups_v1',
-  CYCLES: 'kimana_tracker_cycles_v1',
-  AUDIT_LOGS: 'kimana_tracker_audit_logs_v1',
-  USER_ROLE: 'kimana_tracker_user_role_v1',
-  CURRENT_CYCLE_ID: 'kimana_tracker_current_cycle_id_v1',
+  LOCALITIES: 'kimana_tracker_localities_v2',
+  PEOPLE: 'kimana_tracker_people_v2',
+  ACTIVITIES: 'kimana_tracker_activities_v2',
+  STUDY_CIRCLES: 'kimana_tracker_study_circles_v2',
+  CHILDREN_CLASSES: 'kimana_tracker_children_classes_v2',
+  JUNIOR_YOUTH: 'kimana_tracker_junior_youth_v2',
+  DEVOTIONALS: 'kimana_tracker_devotionals_v2',
+  HOME_VISITS: 'kimana_tracker_home_visits_v2',
+  SERVICE_VISITS: 'kimana_tracker_service_visits_v2',
+  NEW_BAHAIS: 'kimana_tracker_new_bahais_v2',
+  FOLLOW_UPS: 'kimana_tracker_follow_ups_v2',
+  CYCLES: 'kimana_tracker_cycles_v2',
+  AUDIT_LOGS: 'kimana_tracker_audit_logs_v2',
+  USER_ROLE: 'kimana_tracker_user_role_v2',
+  CURRENT_CYCLE_ID: 'kimana_tracker_current_cycle_id_v2',
 };
+
+// Immediately clean up legacy mock/test data from browser localStorage
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      // Remove all un-versioned or older kimana_tracker_* keys
+      if (k && k.startsWith('kimana_tracker_') && !k.endsWith('_v2') && k !== 'kimana_tracker_purged_test_data_v2') {
+        keysToRemove.push(k);
+      }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    // One-time hard reset to ensure all previous test data is wiped clean
+    if (!localStorage.getItem('kimana_tracker_purged_test_data_v2')) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('kimana_tracker_')) {
+          keysToRemove.push(k);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      localStorage.setItem('kimana_tracker_purged_test_data_v2', 'true');
+    }
+  }
+} catch (e) {
+  console.warn('Could not purge legacy storage keys', e);
+}
 
 // Helper for local storage reading/writing with fallback
 function loadFromStorage<T>(key: string, defaultValue: T): T {
@@ -166,34 +195,52 @@ export class StorageService {
   }
 
   static getCurrentCycleId(): string {
-    return loadFromStorage<string>(KEYS.CURRENT_CYCLE_ID, 'cycle-14');
+    return loadFromStorage<string>(KEYS.CURRENT_CYCLE_ID, '');
   }
   static saveCurrentCycleId(cycleId: string): void {
     saveToStorage(KEYS.CURRENT_CYCLE_ID, cycleId);
   }
 
-  // Reset demo data
+  // Clear all stored data completely (no test or dummy data)
+  static clearAllData(): void {
+    saveToStorage(KEYS.LOCALITIES, []);
+    saveToStorage(KEYS.PEOPLE, []);
+    saveToStorage(KEYS.ACTIVITIES, []);
+    saveToStorage(KEYS.STUDY_CIRCLES, []);
+    saveToStorage(KEYS.CHILDREN_CLASSES, []);
+    saveToStorage(KEYS.JUNIOR_YOUTH, []);
+    saveToStorage(KEYS.DEVOTIONALS, []);
+    saveToStorage(KEYS.HOME_VISITS, []);
+    saveToStorage(KEYS.SERVICE_VISITS, []);
+    saveToStorage(KEYS.NEW_BAHAIS, []);
+    saveToStorage(KEYS.FOLLOW_UPS, []);
+    saveToStorage(KEYS.CYCLES, []);
+    saveToStorage(KEYS.AUDIT_LOGS, []);
+    saveToStorage(KEYS.CURRENT_CYCLE_ID, '');
+  }
+
+  // Reset to clean slate (no test data)
   static resetDemoData(): void {
-    saveToStorage(KEYS.LOCALITIES, INITIAL_LOCALITIES);
-    saveToStorage(KEYS.PEOPLE, INITIAL_PEOPLE);
-    saveToStorage(KEYS.ACTIVITIES, INITIAL_ACTIVITIES);
-    saveToStorage(KEYS.STUDY_CIRCLES, INITIAL_STUDY_CIRCLES);
-    saveToStorage(KEYS.CHILDREN_CLASSES, INITIAL_CHILDREN_CLASSES);
-    saveToStorage(KEYS.JUNIOR_YOUTH, INITIAL_JUNIOR_YOUTH_GROUPS);
-    saveToStorage(KEYS.DEVOTIONALS, INITIAL_DEVOTIONALS);
-    saveToStorage(KEYS.HOME_VISITS, INITIAL_HOME_VISITS);
-    saveToStorage(KEYS.SERVICE_VISITS, INITIAL_SERVICE_VISITS);
-    saveToStorage(KEYS.NEW_BAHAIS, INITIAL_NEW_BAHAIS);
-    saveToStorage(KEYS.FOLLOW_UPS, INITIAL_FOLLOW_UPS);
-    saveToStorage(KEYS.CYCLES, INITIAL_CYCLES);
-    saveToStorage(KEYS.AUDIT_LOGS, INITIAL_AUDIT_LOGS);
-    saveToStorage(KEYS.CURRENT_CYCLE_ID, 'cycle-14');
+    this.clearAllData();
+  }
+
+  // Load Kimana Cluster base localities with 0 counts/no test data
+  static loadCleanKimanaLocalities(): Locality[] {
+    const now = new Date().toISOString();
+    const cleanLocalities: Locality[] = DEFAULT_KIMANA_LOCALITIES.map((loc, idx) => ({
+      ...loc,
+      id: `loc-${idx + 1}-${Date.now()}`,
+      createdAt: now,
+      updatedAt: now
+    }));
+    this.saveLocalities(cleanLocalities);
+    return cleanLocalities;
   }
 
   // Backup & restore whole DB as JSON
   static exportFullBackup(): string {
     const data = {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       cluster: 'Kimana Cluster',
       localities: this.getLocalities(),

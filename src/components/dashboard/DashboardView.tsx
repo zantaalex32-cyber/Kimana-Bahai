@@ -81,7 +81,7 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
   }));
 
   // Find locality with most activities
-  let topLocality = 'Kimana Town';
+  let topLocality = 'None';
   let topCount = 0;
   Object.entries(localityCounts).forEach(([loc, cnt]) => {
     if (cnt > topCount) {
@@ -95,15 +95,21 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
   const totalJYCount = juniorYouthGroups.reduce((sum, j) => sum + j.averageAttendance, 0);
   const totalAdultSCParticipants = studyCircles.reduce((sum, s) => sum + s.participants.length, 0);
 
-  // 4. Growth Trend Data
-  const growthTrendData = [
-    { month: 'Mar', count: 185 },
-    { month: 'Apr', count: 194 },
-    { month: 'May', count: 202 },
-    { month: 'Jun', count: 208 },
-    { month: 'Jul', count: 212 },
-    { month: 'Aug', count: totalBahais }
-  ];
+  // 4. Growth Trend Data (dynamically aggregate from localities growthHistory)
+  const growthMap: Record<string, number> = {};
+  localities.forEach(l => {
+    (l.growthHistory || []).forEach(gh => {
+      const label = `${gh.month} ${gh.year}`;
+      growthMap[label] = (growthMap[label] || 0) + gh.count;
+    });
+  });
+  const dynamicGrowthTrendData = Object.keys(growthMap).map(k => ({
+    month: k,
+    count: growthMap[k]
+  }));
+  const growthTrendData = dynamicGrowthTrendData.length > 0 
+    ? dynamicGrowthTrendData 
+    : (totalBahais > 0 ? [{ month: 'Current', count: totalBahais }] : []);
 
   // Stat Card Item List
   const statCards = [
@@ -382,18 +388,24 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
             </span>
           </div>
 
-          <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={activitiesByTypeData}>
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                />
-                <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {activitiesByTypeData.length === 0 ? (
+            <div className="h-60 w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+              <p>No activities recorded yet.</p>
+            </div>
+          ) : (
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={activitiesByTypeData}>
+                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                  />
+                  <Bar dataKey="count" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
         {/* Chart 2: Growth in Bahá’í Community */}
@@ -405,30 +417,44 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
               </h3>
               <p className="text-xs text-slate-500">Total Bahá’í population growth in Kimana Cluster</p>
             </div>
-            <div className="flex items-center gap-1 text-xs text-emerald-600 font-bold">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+14.5%</span>
-            </div>
+            {growthTrendData.length > 1 && (
+              <div className="flex items-center gap-1 text-xs text-emerald-600 font-bold">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>
+                  {Math.round(
+                    ((growthTrendData[growthTrendData.length - 1].count - growthTrendData[0].count) /
+                      (growthTrendData[0].count || 1)) *
+                      100
+                  )}%
+                </span>
+              </div>
+            )}
           </div>
 
-          <div className="h-60 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={growthTrendData}>
-                <defs>
-                  <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} />
-                <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
-                />
-                <Area type="monotone" dataKey="count" stroke="#10b981" fillOpacity={1} fill="url(#colorGrowth)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {growthTrendData.length === 0 ? (
+            <div className="h-60 w-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-xs">
+              <p>No population growth history recorded yet.</p>
+            </div>
+          ) : (
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={growthTrendData}>
+                  <defs>
+                    <linearGradient id="colorGrowth" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} domain={['dataMin - 10', 'dataMax + 10']} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                  />
+                  <Area type="monotone" dataKey="count" stroke="#10b981" fillOpacity={1} fill="url(#colorGrowth)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
 
       </div>
@@ -464,19 +490,27 @@ export const DashboardView: React.FC<{ onQuickRecord: () => void }> = ({ onQuick
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {localities.map(loc => (
-                <tr key={loc.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
-                  <td className="p-3 font-bold text-slate-900 dark:text-white">{loc.name}</td>
-                  <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">{loc.bahaiCount}</td>
-                  <td className="p-3">{loc.childrenClassesCount}</td>
-                  <td className="p-3">{loc.juniorYouthGroupsCount}</td>
-                  <td className="p-3">{loc.studyCirclesCount}</td>
-                  <td className="p-3">{loc.devotionalMeetingsCount}</td>
-                  <td className="p-3 text-slate-500 truncate max-w-xs">
-                    {loc.humanResources.join(', ')}
+              {localities.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="p-8 text-center text-slate-400 dark:text-slate-500">
+                    No localities recorded yet.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                localities.map(loc => (
+                  <tr key={loc.id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40">
+                    <td className="p-3 font-bold text-slate-900 dark:text-white">{loc.name}</td>
+                    <td className="p-3 font-semibold text-emerald-600 dark:text-emerald-400">{loc.bahaiCount}</td>
+                    <td className="p-3">{loc.childrenClassesCount}</td>
+                    <td className="p-3">{loc.juniorYouthGroupsCount}</td>
+                    <td className="p-3">{loc.studyCirclesCount}</td>
+                    <td className="p-3">{loc.devotionalMeetingsCount}</td>
+                    <td className="p-3 text-slate-500 truncate max-w-xs">
+                      {loc.humanResources.join(', ')}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

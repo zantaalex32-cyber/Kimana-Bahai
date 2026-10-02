@@ -95,6 +95,8 @@ interface AppContextType {
   updateCycle: (id: string, item: Partial<Cycle>) => void;
 
   resetDemoData: () => void;
+  clearAllData: () => void;
+  loadKimanaLocalities: () => void;
   exportDataJSON: () => string;
   importDataJSON: (json: string) => boolean;
 }
@@ -108,7 +110,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
-  const [currentCycleId, setCurrentCycleIdState] = useState<string>('cycle-14');
+  const [currentCycleId, setCurrentCycleIdState] = useState<string>('');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | 'week' | 'month' | 'cycle'>('all');
   const [selectedLocalityFilter, setSelectedLocalityFilter] = useState<string>('all');
 
@@ -471,10 +473,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     StorageService.saveCycles(updated);
   };
 
-  const resetDemoData = () => {
-    StorageService.resetDemoData();
+  const clearAllData = () => {
+    StorageService.clearAllData();
     refreshData();
-    StorageService.logAction(userRole, 'Reset Demo Data', 'Restored original Kimana Cluster sample dataset');
+    StorageService.logAction(userRole, 'Clear All Data', 'Erased all test and stored records to clean slate');
+  };
+
+  const resetDemoData = () => {
+    clearAllData();
+  };
+
+  const loadKimanaLocalities = () => {
+    StorageService.loadCleanKimanaLocalities();
+    refreshData();
+    StorageService.logAction(userRole, 'Initialized Localities', 'Loaded official Kimana Cluster localities with clean zero data');
   };
 
   const exportDataJSON = () => {
@@ -514,7 +526,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       addNewBahai, updateNewBahai, deleteNewBahai,
       addFollowUp, updateFollowUp, deleteFollowUp,
       addCycle, updateCycle,
-      resetDemoData, exportDataJSON, importDataJSON
+      resetDemoData, clearAllData, loadKimanaLocalities, exportDataJSON, importDataJSON
     }}>
       {children}
     </AppContext.Provider>
