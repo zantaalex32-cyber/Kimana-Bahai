@@ -371,4 +371,16 @@ export type NavigationTab =
   | 'followups'
   | 'reports'
   | 'cycles'
-  | 'settings';
+  | 'settings'
+  | 'login';
+
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  role: UserRole;
+  providerId?: string;
+  isAnonymous?: boolean;
+}
+

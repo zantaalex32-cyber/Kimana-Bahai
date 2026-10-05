@@ -2,9 +2,19 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { 
   Locality, Person, Activity, StudyCircle, ChildrenClass, 
   JuniorYouthGroup, DevotionalMeeting, HomeVisit, ServiceVisit, 
-  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole, NavigationTab 
+  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole, NavigationTab, AuthUser 
 } from '../types';
 import { StorageService } from '../services/storage';
+import { 
+  auth, 
+  signInWithGoogle, 
+  signOutFromFirebase, 
+  updateUserRoleInFirestore,
+  signInWithEmailPassword,
+  setUserPassword,
+  isSystemAdminEmail 
+} from '../services/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface AppContextType {
   activeTab: NavigationTab;
@@ -14,6 +24,18 @@ interface AppContextType {
   theme: 'light' | 'dark';
   setTheme: (theme: 'light' | 'dark') => void;
   toggleTheme: () => void;
+
+  // Auth & Google User
+  currentUser: AuthUser | null;
+  isAuthLoading: boolean;
+  hasEnteredApp: boolean;
+  isSystemAdmin: boolean;
+  setHasEnteredApp: (entered: boolean) => void;
+  loginWithGoogle: () => Promise<void>;
+  loginWithPassword: (email: string, password: string, isSettingPassword?: boolean) => Promise<void>;
+  saveUserPassword: (password: string) => Promise<void>;
+  loginAsGuest: () => void;
+  logout: () => Promise<void>;
   
   // Search & Filters
   searchQuery: string;
@@ -129,6 +151,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
+  // Auth User state
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
+  const [hasEnteredApp, setHasEnteredApp] = useState<boolean>(false);
+
   // Load state on mount
   useEffect(() => {
     setUserRoleState(StorageService.getUserRole());
@@ -141,7 +168,93 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
     
     refreshData();
+
+    // Listen to Firebase Auth state
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        const storedRole = StorageService.getUserRole();
+        const user: AuthUser = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Friend of Kimana',
+          photoURL: fbUser.photoURL,
+          role: storedRole || 'Cluster Coordinator',
+          providerId: 'google.com'
+        };
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+        setHasEnteredApp(false);
+      }
+      setIsAuthLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
+
+  const isSystemAdmin = isSystemAdminEmail(currentUser?.email);
+
+  const loginWithGoogle = async () => {
+    setIsAuthLoading(true);
+    try {
+      const res = await signInWithGoogle();
+      setCurrentUser(res.user);
+      if (res.user.role) {
+        setUserRoleState(res.user.role);
+        StorageService.saveUserRole(res.user.role);
+      }
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const loginWithPassword = async (email: string, password: string, isSettingPassword = false) => {
+    setIsAuthLoading(true);
+    try {
+      const res = await signInWithEmailPassword(email, password, isSettingPassword);
+      setCurrentUser(res.user);
+      if (res.user.role) {
+        setUserRoleState(res.user.role);
+        StorageService.saveUserRole(res.user.role);
+      }
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const saveUserPassword = async (password: string) => {
+    if (!currentUser) throw new Error('Must be signed in to set password');
+    await setUserPassword(currentUser.uid, password);
+  };
+
+  const loginAsGuest = () => {
+    const guestUser: AuthUser = {
+      uid: 'guest-' + Date.now(),
+      email: null,
+      displayName: 'Guest Visitor',
+      photoURL: null,
+      role: 'Viewer',
+      isAnonymous: true
+    };
+    setUserRoleState('Viewer');
+    StorageService.saveUserRole('Viewer');
+    setCurrentUser(guestUser);
+    setHasEnteredApp(true);
+    setActiveTab('dashboard');
+    StorageService.logAction('Viewer', 'Guest Login', 'Entered as Guest Viewer (read-only mode)');
+  };
+
+  const logout = async () => {
+    setIsAuthLoading(true);
+    try {
+      await signOutFromFirebase();
+      setCurrentUser(null);
+      setHasEnteredApp(false);
+      setActiveTab('login');
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
 
   const refreshData = () => {
     setLocalities(StorageService.getLocalities());
@@ -160,8 +273,28 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const setUserRole = (role: UserRole) => {
+    // If user is a guest, they are restricted to Viewer role and cannot change roles
+    if (currentUser?.isAnonymous) {
+      if (role !== 'Viewer') {
+        console.warn('Guest access is restricted to Viewer and cannot change roles.');
+        return;
+      }
+    }
+
+    // Strict requirement: Only zantatech9@gmail.com is allowed as System Administrator
+    if (role === 'Administrator' && !isSystemAdminEmail(currentUser?.email)) {
+      console.warn('Security restriction: Only zantatech9@gmail.com is allowed to hold the System Administrator role.');
+      return;
+    }
+
     setUserRoleState(role);
     StorageService.saveUserRole(role);
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, role });
+      if (!currentUser.isAnonymous) {
+        updateUserRoleInFirestore(currentUser.uid, role, currentUser.email);
+      }
+    }
     StorageService.logAction(role, 'Changed Role', `Switched role to ${role}`);
   };
 
@@ -504,6 +637,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       activeTab, setActiveTab,
       userRole, setUserRole,
       theme, setTheme, toggleTheme,
+      currentUser, isAuthLoading,
+      hasEnteredApp, setHasEnteredApp,
+      isSystemAdmin,
+      loginWithGoogle, loginWithPassword, saveUserPassword, loginAsGuest, logout,
       searchQuery, setSearchQuery,
       isSearchOpen, setIsSearchOpen,
       currentCycleId, setCurrentCycleId,

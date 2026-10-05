@@ -23,6 +23,8 @@ import { FollowUpsView } from './components/followups/FollowUpsView';
 import { ReportsView } from './components/reports/ReportsView';
 import { CyclesView } from './components/cycles/CyclesView';
 import { SettingsView } from './components/settings/SettingsView';
+import { LoginPage } from './components/auth/LoginPage';
+import { AppLogo } from './components/common/AppLogo';
 
 // Modals
 import { QuickRecordModal } from './components/modals/QuickRecordModal';
@@ -31,11 +33,32 @@ import { MultiPersonEntryModal } from './components/modals/MultiPersonEntryModal
 import { SecurityPinModal } from './components/modals/SecurityPinModal';
 
 const AppContent: React.FC = () => {
-  const { activeTab, theme } = useApp();
+  const { activeTab, theme, currentUser, hasEnteredApp, isAuthLoading } = useApp();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isQuickRecordOpen, setIsQuickRecordOpen] = useState(false);
   const [isMultiEntryOpen, setIsMultiEntryOpen] = useState(false);
   const [isSecurityPinOpen, setIsSecurityPinOpen] = useState(false);
+
+  // Initial loading splash screen
+  if (isAuthLoading) {
+    return (
+      <div className={`min-h-screen flex flex-col items-center justify-center p-6 ${theme === 'dark' ? 'dark bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'} antialiased transition-colors duration-200`}>
+        <AppLogo size="xl" showText={false} className="mb-4 animate-pulse" />
+        <h2 className="text-xl font-bold tracking-tight">Kimana Cluster Tracker</h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Connecting to Kimana Community services...</p>
+        <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mt-4" />
+      </div>
+    );
+  }
+
+  // Welcome user with login page upon opening the app until logged in and role is selected
+  if (!currentUser || !hasEnteredApp) {
+    return (
+      <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} antialiased font-sans transition-colors duration-200`}>
+        <LoginPage />
+      </div>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -80,6 +103,8 @@ const AppContent: React.FC = () => {
         return <CyclesView />;
       case 'settings':
         return <SettingsView />;
+      case 'login':
+        return <LoginPage />;
       default:
         return (
           <DashboardView 

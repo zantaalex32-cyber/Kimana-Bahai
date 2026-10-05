@@ -2,10 +2,12 @@ import React from 'react';
 import { 
   X, LayoutDashboard, MapPin, Users, CalendarCheck, BookOpen, 
   Sparkles, GraduationCap, HeartHandshake, Home, PlaneTakeoff, 
-  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings
+  UserPlus, Calendar, ListTodo, BarChart3, RotateCw, Settings,
+  LogIn, UserCheck
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
+import { AppLogo } from './common/AppLogo';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -13,7 +15,7 @@ interface MobileNavProps {
 }
 
 export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
-  const { activeTab, setActiveTab, followUps } = useApp();
+  const { activeTab, setActiveTab, followUps, currentUser, userRole } = useApp();
 
   if (!isOpen) return null;
 
@@ -51,15 +53,7 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
       <div className="relative flex-1 max-w-xs w-full bg-white dark:bg-slate-900 h-full flex flex-col p-4 shadow-xl z-10 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
         
         <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold">
-              K
-            </div>
-            <div>
-              <h2 className="font-bold text-slate-900 dark:text-white text-sm">Kimana Cluster</h2>
-              <p className="text-xs text-slate-500">Navigation Menu</p>
-            </div>
-          </div>
+          <AppLogo size="sm" showText={true} />
           <button 
             onClick={onClose}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
@@ -101,6 +95,35 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
               </button>
             );
           })}
+
+          {/* Account / Login */}
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                setActiveTab('login');
+                onClose();
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition border ${
+                activeTab === 'login'
+                  ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+              }`}
+            >
+              <div className="flex items-center gap-3 truncate">
+                {currentUser ? (
+                  <UserCheck className="w-4 h-4 text-emerald-600" />
+                ) : (
+                  <LogIn className="w-4 h-4 text-emerald-600" />
+                )}
+                <span className="truncate">
+                  {currentUser ? (currentUser.displayName || 'Google Account') : 'Sign in with Google'}
+                </span>
+              </div>
+              <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10">
+                {currentUser ? userRole : 'Login'}
+              </span>
+            </button>
+          </div>
         </nav>
 
         <div className="pt-4 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">

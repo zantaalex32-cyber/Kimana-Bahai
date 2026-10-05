@@ -1,0 +1,37 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with role and Google auth details",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase user UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Full name" },
+        "photoURL": { "type": "string", "description": "Avatar URL" },
+        "role": { "type": "string", "description": "Access role in cluster" },
+        "createdAt": { "type": "string", "description": "Timestamp" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Locality": {
+      "title": "Locality",
+      "description": "Cluster locality details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "bahaiCount": { "type": "number" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Registered user accounts"
+    },
+    "/localities/{localityId}": {
+      "schema": "Locality",
+      "description": "Kimana Cluster localities"
+    }
+  }
+}
