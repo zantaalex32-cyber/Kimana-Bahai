@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
 import { AppLogo } from './common/AppLogo';
 import { InstallAppButton } from './common/InstallAppButton';
+import { LiveSyncIndicator } from './common/LiveSyncIndicator';
 import { isSystemAdminEmail } from '../services/firebase';
 
 interface HeaderProps {
@@ -125,6 +126,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="sm:hidden">Add</span>
             </button>
           )}
+
+          {/* Live Multi-User Sync Indicator */}
+          <LiveSyncIndicator compact />
 
           {/* Role Switcher */}
           {currentUser?.isAnonymous ? (

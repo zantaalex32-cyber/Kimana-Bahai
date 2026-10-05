@@ -42,9 +42,10 @@ const firebaseConfig = {
 // Initialize Firebase App
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Auth & Firestore
+// Initialize Auth & Firestore with provisioned database
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+const databaseId = appConfig.firestoreDatabaseId || "ai-studio-kimanaclustertra-d94350e3-719e-419f-bb49-1c26e477adcd";
+export const db = databaseId ? getFirestore(app, databaseId) : getFirestore(app);
 
 // Configure Google Auth Provider
 export const googleProvider = new GoogleAuthProvider();

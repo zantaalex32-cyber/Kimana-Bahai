@@ -14,6 +14,12 @@ import {
   setUserPassword,
   isSystemAdminEmail 
 } from '../services/firebase';
+import { 
+  subscribeToCloudClusterData, 
+  pushClusterCollectionToCloud, 
+  pushMetadataToCloud, 
+  CLOUD_COLLECTIONS 
+} from '../services/cloudSync';
 import { onAuthStateChanged } from 'firebase/auth';
 
 interface AppContextType {
@@ -169,6 +175,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     refreshData();
 
+    // Real-time synchronization: Any data change made by anyone is instantly received and updated
+    const unsubCloud = subscribeToCloudClusterData({
+      onLocalitiesChange: (items) => setLocalities(items),
+      onPeopleChange: (items) => setPeople(items),
+      onActivitiesChange: (items) => setActivities(items),
+      onStudyCirclesChange: (items) => setStudyCircles(items),
+      onChildrenClassesChange: (items) => setChildrenClasses(items),
+      onJuniorYouthGroupsChange: (items) => setJuniorYouthGroups(items),
+      onDevotionalsChange: (items) => setDevotionals(items),
+      onHomeVisitsChange: (items) => setHomeVisits(items),
+      onServiceVisitsChange: (items) => setServiceVisits(items),
+      onNewBahaisChange: (items) => setNewBahais(items),
+      onFollowUpsChange: (items) => setFollowUps(items),
+      onCyclesChange: (items) => setCycles(items),
+      onAuditLogsChange: (items) => setAuditLogs(items),
+      onCurrentCycleIdChange: (id) => setCurrentCycleIdState(id),
+    });
+
     // Listen to Firebase Auth state
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
@@ -189,7 +213,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setIsAuthLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      unsubCloud();
+    };
   }, []);
 
   const isSystemAdmin = isSystemAdminEmail(currentUser?.email);
@@ -315,32 +342,44 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setCurrentCycleId = (id: string) => {
     setCurrentCycleIdState(id);
     StorageService.saveCurrentCycleId(id);
+    pushMetadataToCloud({ currentCycleId: id }, currentUser?.email);
   };
 
   // Helper for generating IDs and timestamps
   const now = () => new Date().toISOString();
 
-  // CRUD Implementations
+  // Helper to log audit actions and sync logs to cloud
+  const logAndSyncAction = (role: UserRole, action: string, details: string) => {
+    StorageService.logAction(role, action, details);
+    const updatedLogs = StorageService.getAuditLogs();
+    setAuditLogs(updatedLogs);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.AUDIT_LOGS, updatedLogs, currentUser?.email);
+  };
+
+  // CRUD Implementations with Real-Time Cloud Synchronization
   const addLocality = (item: Omit<Locality, 'id' | 'createdAt' | 'updatedAt'>) => {
     const newItem: Locality = { ...item, id: 'loc-' + Date.now(), createdAt: now(), updatedAt: now() };
     const updated = [newItem, ...localities];
     setLocalities(updated);
     StorageService.saveLocalities(updated);
-    StorageService.logAction(userRole, 'Added Locality', `Created locality "${newItem.name}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.LOCALITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Locality', `Created locality "${newItem.name}"`);
   };
 
   const updateLocality = (id: string, item: Partial<Locality>) => {
     const updated = localities.map(l => l.id === id ? { ...l, ...item, updatedAt: now() } : l);
     setLocalities(updated);
     StorageService.saveLocalities(updated);
-    StorageService.logAction(userRole, 'Updated Locality', `Updated locality ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.LOCALITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Locality', `Updated locality ID ${id}`);
   };
 
   const deleteLocality = (id: string) => {
     const updated = localities.filter(l => l.id !== id);
     setLocalities(updated);
     StorageService.saveLocalities(updated);
-    StorageService.logAction(userRole, 'Deleted Locality', `Archived/Deleted locality ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.LOCALITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Locality', `Archived/Deleted locality ID ${id}`);
   };
 
   const addPerson = (item: Omit<Person, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -348,21 +387,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...people];
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Added Person', `Added friend "${newItem.name}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.PEOPLE, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Person', `Added friend "${newItem.name}"`);
   };
 
   const updatePerson = (id: string, item: Partial<Person>) => {
     const updated = people.map(p => p.id === id ? { ...p, ...item, updatedAt: now() } : p);
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Updated Person', `Updated person ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.PEOPLE, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Person', `Updated person ID ${id}`);
   };
 
   const deletePerson = (id: string) => {
     const updated = people.filter(p => p.id !== id);
     setPeople(updated);
     StorageService.savePeople(updated);
-    StorageService.logAction(userRole, 'Deleted Person', `Removed person ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.PEOPLE, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Person', `Removed person ID ${id}`);
   };
 
   const addActivity = (item: Omit<Activity, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -370,7 +412,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...activities];
     setActivities(updated);
     StorageService.saveActivities(updated);
-    StorageService.logAction(userRole, 'Added Activity', `Created activity "${newItem.title}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.ACTIVITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Activity', `Created activity "${newItem.title}"`);
 
     // If follow-up required, auto add to follow-ups
     if (newItem.followUpRequired && newItem.followUpDate) {
@@ -391,14 +434,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = activities.map(a => a.id === id ? { ...a, ...item, updatedAt: now() } : a);
     setActivities(updated);
     StorageService.saveActivities(updated);
-    StorageService.logAction(userRole, 'Updated Activity', `Updated activity ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.ACTIVITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Activity', `Updated activity ID ${id}`);
   };
 
   const deleteActivity = (id: string) => {
     const updated = activities.filter(a => a.id !== id);
     setActivities(updated);
     StorageService.saveActivities(updated);
-    StorageService.logAction(userRole, 'Deleted Activity', `Removed activity ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.ACTIVITIES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Activity', `Removed activity ID ${id}`);
   };
 
   const addStudyCircle = (item: Omit<StudyCircle, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -406,21 +451,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...studyCircles];
     setStudyCircles(updated);
     StorageService.saveStudyCircles(updated);
-    StorageService.logAction(userRole, 'Added Study Circle', `Added study group "${newItem.groupName}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.STUDY_CIRCLES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Study Circle', `Added study group "${newItem.groupName}"`);
   };
 
   const updateStudyCircle = (id: string, item: Partial<StudyCircle>) => {
     const updated = studyCircles.map(s => s.id === id ? { ...s, ...item, updatedAt: now() } : s);
     setStudyCircles(updated);
     StorageService.saveStudyCircles(updated);
-    StorageService.logAction(userRole, 'Updated Study Circle', `Updated study circle ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.STUDY_CIRCLES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Study Circle', `Updated study circle ID ${id}`);
   };
 
   const deleteStudyCircle = (id: string) => {
     const updated = studyCircles.filter(s => s.id !== id);
     setStudyCircles(updated);
     StorageService.saveStudyCircles(updated);
-    StorageService.logAction(userRole, 'Deleted Study Circle', `Removed study circle ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.STUDY_CIRCLES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Study Circle', `Removed study circle ID ${id}`);
   };
 
   const addChildrenClass = (item: Omit<ChildrenClass, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -428,21 +476,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...childrenClasses];
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Added Children Class', `Added class "${newItem.className}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CHILDREN_CLASSES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Children Class', `Added class "${newItem.className}"`);
   };
 
   const updateChildrenClass = (id: string, item: Partial<ChildrenClass>) => {
     const updated = childrenClasses.map(c => c.id === id ? { ...c, ...item, updatedAt: now() } : c);
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Updated Children Class', `Updated children class ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CHILDREN_CLASSES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Children Class', `Updated children class ID ${id}`);
   };
 
   const deleteChildrenClass = (id: string) => {
     const updated = childrenClasses.filter(c => c.id !== id);
     setChildrenClasses(updated);
     StorageService.saveChildrenClasses(updated);
-    StorageService.logAction(userRole, 'Deleted Children Class', `Removed class ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CHILDREN_CLASSES, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Children Class', `Removed class ID ${id}`);
   };
 
   const addJuniorYouthGroup = (item: Omit<JuniorYouthGroup, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -450,21 +501,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...juniorYouthGroups];
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Added JY Group', `Added group "${newItem.groupName}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.JUNIOR_YOUTH_GROUPS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added JY Group', `Added group "${newItem.groupName}"`);
   };
 
   const updateJuniorYouthGroup = (id: string, item: Partial<JuniorYouthGroup>) => {
     const updated = juniorYouthGroups.map(j => j.id === id ? { ...j, ...item, updatedAt: now() } : j);
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Updated JY Group', `Updated group ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.JUNIOR_YOUTH_GROUPS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated JY Group', `Updated group ID ${id}`);
   };
 
   const deleteJuniorYouthGroup = (id: string) => {
     const updated = juniorYouthGroups.filter(j => j.id !== id);
     setJuniorYouthGroups(updated);
     StorageService.saveJuniorYouthGroups(updated);
-    StorageService.logAction(userRole, 'Deleted JY Group', `Removed group ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.JUNIOR_YOUTH_GROUPS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted JY Group', `Removed group ID ${id}`);
   };
 
   const addDevotional = (item: Omit<DevotionalMeeting, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -472,21 +526,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...devotionals];
     setDevotionals(updated);
     StorageService.saveDevotionals(updated);
-    StorageService.logAction(userRole, 'Added Devotional', `Recorded devotional "${newItem.title}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.DEVOTIONALS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Devotional', `Recorded devotional "${newItem.title}"`);
   };
 
   const updateDevotional = (id: string, item: Partial<DevotionalMeeting>) => {
     const updated = devotionals.map(d => d.id === id ? { ...d, ...item, updatedAt: now() } : d);
     setDevotionals(updated);
     StorageService.saveDevotionals(updated);
-    StorageService.logAction(userRole, 'Updated Devotional', `Updated devotional ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.DEVOTIONALS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Devotional', `Updated devotional ID ${id}`);
   };
 
   const deleteDevotional = (id: string) => {
     const updated = devotionals.filter(d => d.id !== id);
     setDevotionals(updated);
     StorageService.saveDevotionals(updated);
-    StorageService.logAction(userRole, 'Deleted Devotional', `Removed devotional ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.DEVOTIONALS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Devotional', `Removed devotional ID ${id}`);
   };
 
   const addHomeVisit = (item: Omit<HomeVisit, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -494,7 +551,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...homeVisits];
     setHomeVisits(updated);
     StorageService.saveHomeVisits(updated);
-    StorageService.logAction(userRole, 'Added Home Visit', `Recorded visit to "${newItem.familyOrPersonVisited}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.HOME_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Home Visit', `Recorded visit to "${newItem.familyOrPersonVisited}"`);
 
     if (newItem.followUpNeeded && newItem.followUpDate) {
       addFollowUp({
@@ -514,14 +572,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = homeVisits.map(h => h.id === id ? { ...h, ...item, updatedAt: now() } : h);
     setHomeVisits(updated);
     StorageService.saveHomeVisits(updated);
-    StorageService.logAction(userRole, 'Updated Home Visit', `Updated home visit ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.HOME_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Home Visit', `Updated home visit ID ${id}`);
   };
 
   const deleteHomeVisit = (id: string) => {
     const updated = homeVisits.filter(h => h.id !== id);
     setHomeVisits(updated);
     StorageService.saveHomeVisits(updated);
-    StorageService.logAction(userRole, 'Deleted Home Visit', `Removed home visit ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.HOME_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Home Visit', `Removed home visit ID ${id}`);
   };
 
   const addServiceVisit = (item: Omit<ServiceVisit, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -529,21 +589,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...serviceVisits];
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
-    StorageService.logAction(userRole, 'Added Service Visit', `Recorded travel/visit for "${newItem.personName}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.SERVICE_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added Service Visit', `Recorded travel/visit for "${newItem.personName}"`);
   };
 
   const updateServiceVisit = (id: string, item: Partial<ServiceVisit>) => {
     const updated = serviceVisits.map(v => v.id === id ? { ...v, ...item, updatedAt: now() } : v);
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
-    StorageService.logAction(userRole, 'Updated Service Visit', `Updated visit ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.SERVICE_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated Service Visit', `Updated visit ID ${id}`);
   };
 
   const deleteServiceVisit = (id: string) => {
     const updated = serviceVisits.filter(v => v.id !== id);
     setServiceVisits(updated);
     StorageService.saveServiceVisits(updated);
-    StorageService.logAction(userRole, 'Deleted Service Visit', `Removed visit ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.SERVICE_VISITS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted Service Visit', `Removed visit ID ${id}`);
   };
 
   const addNewBahai = (item: Omit<NewBahai, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -551,7 +614,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...newBahais];
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Added New Bahá’í', `Recorded declaration for "${newItem.name}"`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.NEW_BAHAIS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Added New Bahá’í', `Recorded declaration for "${newItem.name}"`);
 
     // Update locality population count
     const targetLoc = localities.find(l => l.id === newItem.localityId);
@@ -564,14 +628,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = newBahais.map(n => n.id === id ? { ...n, ...item, updatedAt: now() } : n);
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Updated New Bahá’í', `Updated record ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.NEW_BAHAIS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Updated New Bahá’í', `Updated record ID ${id}`);
   };
 
   const deleteNewBahai = (id: string) => {
     const updated = newBahais.filter(n => n.id !== id);
     setNewBahais(updated);
     StorageService.saveNewBahais(updated);
-    StorageService.logAction(userRole, 'Deleted New Bahá’í Record', `Removed record ID ${id}`);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.NEW_BAHAIS, updated, currentUser?.email);
+    logAndSyncAction(userRole, 'Deleted New Bahá’í Record', `Removed record ID ${id}`);
   };
 
   const addFollowUp = (item: Omit<FollowUpItem, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -579,18 +645,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...followUps];
     setFollowUps(updated);
     StorageService.saveFollowUps(updated);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.FOLLOW_UPS, updated, currentUser?.email);
   };
 
   const updateFollowUp = (id: string, item: Partial<FollowUpItem>) => {
     const updated = followUps.map(f => f.id === id ? { ...f, ...item, updatedAt: now() } : f);
     setFollowUps(updated);
     StorageService.saveFollowUps(updated);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.FOLLOW_UPS, updated, currentUser?.email);
   };
 
   const deleteFollowUp = (id: string) => {
     const updated = followUps.filter(f => f.id !== id);
     setFollowUps(updated);
     StorageService.saveFollowUps(updated);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.FOLLOW_UPS, updated, currentUser?.email);
   };
 
   const addCycle = (item: Omit<Cycle, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -598,18 +667,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const updated = [newItem, ...cycles];
     setCycles(updated);
     StorageService.saveCycles(updated);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CYCLES, updated, currentUser?.email);
   };
 
   const updateCycle = (id: string, item: Partial<Cycle>) => {
     const updated = cycles.map(c => c.id === id ? { ...c, ...item, updatedAt: now() } : c);
     setCycles(updated);
     StorageService.saveCycles(updated);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CYCLES, updated, currentUser?.email);
   };
 
   const clearAllData = () => {
     StorageService.clearAllData();
     refreshData();
-    StorageService.logAction(userRole, 'Clear All Data', 'Erased all test and stored records to clean slate');
+    // Synchronize cleared state with Cloud Firestore so all connected users see the update
+    Object.values(CLOUD_COLLECTIONS).forEach(col => {
+      pushClusterCollectionToCloud(col, [], currentUser?.email);
+    });
+    logAndSyncAction(userRole, 'Clear All Data', 'Erased all test and stored records to clean slate');
   };
 
   const resetDemoData = () => {
@@ -617,9 +692,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const loadKimanaLocalities = () => {
-    StorageService.loadCleanKimanaLocalities();
-    refreshData();
-    StorageService.logAction(userRole, 'Initialized Localities', 'Loaded official Kimana Cluster localities with clean zero data');
+    const clean = StorageService.loadCleanKimanaLocalities();
+    setLocalities(clean);
+    pushClusterCollectionToCloud(CLOUD_COLLECTIONS.LOCALITIES, clean, currentUser?.email);
+    logAndSyncAction(userRole, 'Initialized Localities', 'Loaded official Kimana Cluster localities with clean zero data');
   };
 
   const exportDataJSON = () => {
@@ -628,7 +704,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const importDataJSON = (json: string) => {
     const success = StorageService.importFullBackup(json);
-    if (success) refreshData();
+    if (success) {
+      refreshData();
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.LOCALITIES, StorageService.getLocalities(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.PEOPLE, StorageService.getPeople(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.ACTIVITIES, StorageService.getActivities(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.STUDY_CIRCLES, StorageService.getStudyCircles(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CHILDREN_CLASSES, StorageService.getChildrenClasses(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.JUNIOR_YOUTH_GROUPS, StorageService.getJuniorYouthGroups(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.DEVOTIONALS, StorageService.getDevotionals(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.HOME_VISITS, StorageService.getHomeVisits(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.SERVICE_VISITS, StorageService.getServiceVisits(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.NEW_BAHAIS, StorageService.getNewBahais(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.FOLLOW_UPS, StorageService.getFollowUps(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.CYCLES, StorageService.getCycles(), currentUser?.email);
+      pushClusterCollectionToCloud(CLOUD_COLLECTIONS.AUDIT_LOGS, StorageService.getAuditLogs(), currentUser?.email);
+    }
     return success;
   };
 

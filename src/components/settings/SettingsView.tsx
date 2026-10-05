@@ -8,6 +8,7 @@ import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
 import { isSystemAdminEmail, ADMIN_EMAIL } from '../../services/firebase';
 import { InstallAppButton } from '../common/InstallAppButton';
+import { LiveSyncIndicator } from '../common/LiveSyncIndicator';
 
 export const SettingsView: React.FC = () => {
   const { 
@@ -245,11 +246,14 @@ export const SettingsView: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <FileJson className="w-5 h-5 text-emerald-600" />
-          Offline Data Backup & Synchronization
+          Cloud Real-Time Sync & Data Backup
         </h2>
         <p className="text-xs text-slate-500">
-          All Kimana Cluster data is saved locally on your device. Export JSON backups to keep data safe or transfer to other devices.
+          All data in Kimana Cluster Tracker is synchronized live across all logged-in devices using Cloud Firestore. You can also export offline JSON backups for archival storage.
         </p>
+
+        {/* Live Cloud Sync Status Widget */}
+        <LiveSyncIndicator />
 
         <div className="flex flex-wrap gap-3 pt-2">
           <button

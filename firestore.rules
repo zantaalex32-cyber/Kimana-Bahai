@@ -27,9 +27,75 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Cluster Localities
-    match /localities/{localityId} {
-      allow read: if isSignedIn();
+    // Shared real-time cluster collections - readable by everyone logged in or in the app, writable by authenticated users
+    match /clusterData/{collectionName} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Entity collections
+    match /localities/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /people/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /activities/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /studyCircles/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /childrenClasses/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /juniorYouthGroups/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /devotionals/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /homeVisits/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /serviceVisits/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /newBahais/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /followUps/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /cycles/{id} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    match /auditLogs/{id} {
+      allow read: if true;
       allow write: if isSignedIn();
     }
   }

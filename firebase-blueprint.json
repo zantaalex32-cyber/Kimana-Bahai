@@ -19,8 +19,21 @@
       "description": "Cluster locality details",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "name": { "type": "string" },
-        "bahaiCount": { "type": "number" }
+        "bahaiCount": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "name"]
+    },
+    "ClusterData": {
+      "title": "ClusterData",
+      "description": "Shared cluster real-time synchronized dataset",
+      "type": "object",
+      "properties": {
+        "items": { "type": "array" },
+        "updatedAt": { "type": "string" },
+        "updatedBy": { "type": "string" }
       }
     }
   },
@@ -28,6 +41,10 @@
     "/users/{userId}": {
       "schema": "User",
       "description": "Registered user accounts"
+    },
+    "/clusterData/{collectionName}": {
+      "schema": "ClusterData",
+      "description": "Real-time synchronized collections for Kimana cluster"
     },
     "/localities/{localityId}": {
       "schema": "Locality",
