@@ -8,6 +8,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
 import { AppLogo } from './common/AppLogo';
+import { InstallAppButton } from './common/InstallAppButton';
 
 export const Sidebar: React.FC = () => {
   const { activeTab, setActiveTab, followUps, currentUser, userRole } = useApp();
@@ -107,6 +108,11 @@ export const Sidebar: React.FC = () => {
           </button>
         </div>
       </nav>
+
+      {/* Download / Install Application PWA card */}
+      <div className="pt-2">
+        <InstallAppButton variant="sidebar" />
+      </div>
 
       {/* Cluster Emblem Footer */}
       <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex items-center gap-3 px-2">

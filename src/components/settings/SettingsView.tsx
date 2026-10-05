@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
 import { 
   Settings, Shield, Moon, Sun, Download, Upload, 
-  RotateCcw, History, FileJson, Check, AlertTriangle 
+  RotateCcw, History, FileJson, Check, AlertTriangle,
+  Lock, Info, Smartphone, Monitor, Sparkles
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
+import { isSystemAdminEmail, ADMIN_EMAIL } from '../../services/firebase';
+import { InstallAppButton } from '../common/InstallAppButton';
 
 export const SettingsView: React.FC = () => {
   const { 
     userRole, setUserRole, theme, toggleTheme, 
-    exportDataJSON, importDataJSON, clearAllData, auditLogs 
+    exportDataJSON, importDataJSON, clearAllData, auditLogs,
+    currentUser, setActiveTab
   } = useApp();
 
   const [importStatus, setImportStatus] = useState<string | null>(null);
   const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [roleMessage, setRoleMessage] = useState<string | null>(null);
+
+  const isGuest = !!currentUser?.isAnonymous;
+  const isSysAdmin = isSystemAdminEmail(currentUser?.email);
 
   const roles: { role: UserRole; desc: string }[] = [
     { role: 'Cluster Coordinator', desc: 'Full access to view, edit, add, delete and manage cycles & settings.' },
@@ -81,38 +89,137 @@ export const SettingsView: React.FC = () => {
         </div>
       )}
 
-      {/* Role Selection */}
+      {/* Role Selection with Guest and Admin Enforcement */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Access Role (Local Simulation)</h2>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">User Access Role & Permissions</h2>
+          </div>
+          {isGuest && (
+            <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 flex items-center gap-1.5 border border-amber-300 dark:border-amber-800">
+              <Lock className="w-3.5 h-3.5" />
+              Guest Locked to Viewer
+            </span>
+          )}
         </div>
-        <p className="text-xs text-slate-500">
-          Select a role to test permission levels and access restrictions throughout Kimana Cluster Tracker.
-        </p>
+
+        {isGuest ? (
+          <div className="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/80 text-amber-900 dark:text-amber-200 text-xs flex items-start gap-2.5">
+            <Lock className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+            <div className="flex-1">
+              <p className="font-bold">Guest Access Restricted</p>
+              <p className="mt-0.5 text-amber-800 dark:text-amber-300">
+                You are currently browsing as a Guest. Guest mode only allows read-only Viewer access and cannot change roles. 
+                To switch roles or access Coordinator tools, please sign in.
+              </p>
+              <button
+                onClick={() => setActiveTab('login')}
+                className="mt-2 inline-flex items-center gap-1 px-3 py-1 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs transition cursor-pointer"
+              >
+                Sign In to Change Role ➔
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">
+            Select your service role to test permission levels and access restrictions throughout Kimana Cluster Tracker. (Administrator role is strictly reserved for {ADMIN_EMAIL}).
+          </p>
+        )}
+
+        {roleMessage && (
+          <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>{roleMessage}</span>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
           {roles.map(({ role, desc }) => {
             const isSelected = userRole === role;
+            const isAdminRole = role === 'Administrator';
+            const isRoleDisabled = (isGuest && role !== 'Viewer') || (isAdminRole && !isSysAdmin);
+
+            const handleCardClick = () => {
+              if (isGuest && role !== 'Viewer') {
+                setRoleMessage('Guest access is restricted to Viewer and cannot change roles. Please sign in to switch roles.');
+                setTimeout(() => setRoleMessage(null), 5000);
+                return;
+              }
+              if (isAdminRole && !isSysAdmin) {
+                setRoleMessage(`Security Notice: Only ${ADMIN_EMAIL} is authorized to select the System Administrator role.`);
+                setTimeout(() => setRoleMessage(null), 5000);
+                return;
+              }
+              setUserRole(role);
+              setRoleMessage(null);
+            };
+
             return (
               <div
                 key={role}
-                onClick={() => setUserRole(role)}
-                className={`p-4 rounded-xl border cursor-pointer transition ${
-                  isSelected
-                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 ring-2 ring-emerald-500/20'
-                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                onClick={handleCardClick}
+                className={`p-4 rounded-xl border transition ${
+                  isRoleDisabled
+                    ? 'opacity-40 cursor-not-allowed border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60'
+                    : isSelected
+                    ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 ring-2 ring-emerald-500/20 cursor-pointer shadow-sm'
+                    : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer'
                 }`}
                 id={`role-option-${role.replace(/\s+/g, '-').toLowerCase()}`}
               >
                 <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-white text-sm">
-                  <span>{role}</span>
+                  <span className="flex items-center gap-1.5">
+                    <span>{role}</span>
+                    {isRoleDisabled && <Lock className="w-3.5 h-3.5 text-slate-400" />}
+                  </span>
                   {isSelected && <Check className="w-4 h-4 text-emerald-600" />}
+                  {isAdminRole && !isSysAdmin && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Restricted to {ADMIN_EMAIL.split('@')[0]}
+                    </span>
+                  )}
+                  {isGuest && role !== 'Viewer' && (
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      Guest Locked
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Download & Install Application (PWA) Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm space-y-4">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Download className="w-5 h-5 text-emerald-600" />
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Download & Install Application (PWA)</h2>
+          </div>
+          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5" />
+            Installable from Browser
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          Install Kimana Cluster Tracker directly to your computer desktop, Android phone, or iPhone. It launches full-screen like a native app and works offline with local cached data when in the field.
+        </p>
+
+        <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+              <Smartphone className="w-4 h-4 text-emerald-600" />
+              <span>Install on Home Screen / Desktop</span>
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              One-click install in Google Chrome & Edge, or Add to Home Screen in Safari.
+            </p>
+          </div>
+          <InstallAppButton variant="compact" label="Download App Now" />
         </div>
       </div>
 

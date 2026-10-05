@@ -25,6 +25,7 @@ import { CyclesView } from './components/cycles/CyclesView';
 import { SettingsView } from './components/settings/SettingsView';
 import { LoginPage } from './components/auth/LoginPage';
 import { AppLogo } from './components/common/AppLogo';
+import { OfflineIndicator } from './components/common/OfflineIndicator';
 
 // Modals
 import { QuickRecordModal } from './components/modals/QuickRecordModal';
@@ -168,6 +169,9 @@ const AppContent: React.FC = () => {
 
         {/* Global Search Dialog */}
         <GlobalSearchModal />
+
+        {/* Offline PWA Connectivity Indicator */}
+        <OfflineIndicator />
 
       </div>
     </div>

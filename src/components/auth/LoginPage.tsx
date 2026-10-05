@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { AppLogo } from '../common/AppLogo';
+import { InstallAppButton } from '../common/InstallAppButton';
 import { UserRole } from '../../types';
 import { ADMIN_EMAIL, isSystemAdminEmail } from '../../services/firebase';
 
@@ -198,6 +199,14 @@ export const LoginPage: React.FC = () => {
               ? 'Login successful! Please choose your service role to enter the tracker.' 
               : 'Sign in to access community growth tracking and institute coordination for the Kimana Cluster.'}
           </p>
+
+          <div className="mt-3">
+            <InstallAppButton 
+              variant="pill" 
+              label="Download / Install App to Device" 
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 text-[11px]" 
+            />
+          </div>
         </div>
 
         {/* Content Body */}
@@ -625,7 +634,11 @@ export const LoginPage: React.FC = () => {
 
         {/* Footer */}
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-          <span>Kimana Cluster • Kenya</span>
+          <div className="flex items-center gap-3">
+            <span>Kimana Cluster • Kenya</span>
+            <span className="hidden sm:inline">•</span>
+            <InstallAppButton variant="compact" label="Install PWA" className="py-1 px-2.5 text-[11px] bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300" />
+          </div>
           {currentUser && (
             <button 
               onClick={handleConfirmRoleAndEnter} 

@@ -7,6 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
 import { AppLogo } from './common/AppLogo';
+import { InstallAppButton } from './common/InstallAppButton';
 import { isSystemAdminEmail } from '../services/firebase';
 
 interface HeaderProps {
@@ -196,7 +197,7 @@ export const Header: React.FC<HeaderProps> = ({
                       {currentUser.displayName}
                     </p>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                      {currentUser.email}
+                      {currentUser.email || 'Guest Visitor (Read-Only Viewer)'}
                     </p>
                     <div className="pt-1 flex items-center justify-between text-[10px]">
                       <span className="font-semibold text-emerald-600">Active Role:</span>
@@ -240,6 +241,9 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Sign In</span>
             </button>
           )}
+
+          {/* Download App to Browser / Device Button */}
+          <InstallAppButton variant="header" label="Download App" />
 
           {/* Theme Toggle */}
           <button

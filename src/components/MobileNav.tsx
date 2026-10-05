@@ -8,6 +8,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { NavigationTab } from '../types';
 import { AppLogo } from './common/AppLogo';
+import { InstallAppButton } from './common/InstallAppButton';
 
 interface MobileNavProps {
   isOpen: boolean;
@@ -123,6 +124,11 @@ export const MobileNav: React.FC<MobileNavProps> = ({ isOpen, onClose }) => {
                 {currentUser ? userRole : 'Login'}
               </span>
             </button>
+          </div>
+
+          {/* Download App */}
+          <div className="pt-2">
+            <InstallAppButton variant="compact" label="Download App to Device" className="w-full justify-center" />
           </div>
         </nav>
 
