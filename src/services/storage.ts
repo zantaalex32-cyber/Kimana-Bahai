@@ -1,7 +1,7 @@
 import { 
   Locality, Person, Activity, StudyCircle, ChildrenClass, 
   JuniorYouthGroup, DevotionalMeeting, HomeVisit, ServiceVisit, 
-  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole 
+  NewBahai, FollowUpItem, Cycle, AuditLog, UserRole, AuthUser 
 } from '../types';
 import { 
   INITIAL_LOCALITIES, INITIAL_PEOPLE, INITIAL_ACTIVITIES, 
@@ -28,6 +28,8 @@ const KEYS = {
   AUDIT_LOGS: 'kimana_tracker_audit_logs_v2',
   USER_ROLE: 'kimana_tracker_user_role_v2',
   CURRENT_CYCLE_ID: 'kimana_tracker_current_cycle_id_v2',
+  HAS_ENTERED_APP: 'kimana_tracker_has_entered_app_v2',
+  SAVED_USER: 'kimana_tracker_saved_user_v2',
 };
 
 // Immediately clean up legacy mock/test data from browser localStorage
@@ -199,6 +201,46 @@ export class StorageService {
   }
   static saveCurrentCycleId(cycleId: string): void {
     saveToStorage(KEYS.CURRENT_CYCLE_ID, cycleId);
+  }
+
+  // App Entry and Session Persistence
+  static getHasEnteredApp(): boolean {
+    try {
+      return localStorage.getItem(KEYS.HAS_ENTERED_APP) === 'true';
+    } catch {
+      return false;
+    }
+  }
+  static setHasEnteredApp(entered: boolean): void {
+    try {
+      if (entered) {
+        localStorage.setItem(KEYS.HAS_ENTERED_APP, 'true');
+      } else {
+        localStorage.removeItem(KEYS.HAS_ENTERED_APP);
+      }
+    } catch (e) {
+      console.warn('Could not save hasEnteredApp', e);
+    }
+  }
+
+  static getSavedUser(): AuthUser | null {
+    try {
+      const data = localStorage.getItem(KEYS.SAVED_USER);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+  static saveUser(user: AuthUser | null): void {
+    try {
+      if (user) {
+        localStorage.setItem(KEYS.SAVED_USER, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(KEYS.SAVED_USER);
+      }
+    } catch (e) {
+      console.warn('Could not save user session', e);
+    }
   }
 
   // Clear all stored data completely (no test or dummy data)

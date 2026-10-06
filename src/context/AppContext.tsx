@@ -157,10 +157,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Auth User state
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  // Auth User state with persistent login session support
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    return StorageService.getSavedUser();
+  });
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
-  const [hasEnteredApp, setHasEnteredApp] = useState<boolean>(false);
+  const [hasEnteredApp, setHasEnteredAppState] = useState<boolean>(() => {
+    return StorageService.getHasEnteredApp();
+  });
+
+  const setHasEnteredApp = (entered: boolean) => {
+    setHasEnteredAppState(entered);
+    StorageService.setHasEnteredApp(entered);
+  };
 
   // Load state on mount
   useEffect(() => {
@@ -197,18 +206,32 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       if (fbUser) {
         const storedRole = StorageService.getUserRole();
+        const role: UserRole = isSystemAdminEmail(fbUser.email) 
+          ? 'Administrator' 
+          : (storedRole || 'Cluster Coordinator');
         const user: AuthUser = {
           uid: fbUser.uid,
           email: fbUser.email,
           displayName: fbUser.displayName || fbUser.email?.split('@')[0] || 'Friend of Kimana',
           photoURL: fbUser.photoURL,
-          role: storedRole || 'Cluster Coordinator',
+          role,
           providerId: 'google.com'
         };
         setCurrentUser(user);
+        StorageService.saveUser(user);
+        // Persist session so reopening/refreshing allows entry directly without the login page
+        setHasEnteredAppState(true);
+        StorageService.setHasEnteredApp(true);
       } else {
-        setCurrentUser(null);
-        setHasEnteredApp(false);
+        const saved = StorageService.getSavedUser();
+        if (saved) {
+          setCurrentUser(saved);
+          setHasEnteredAppState(StorageService.getHasEnteredApp());
+        } else {
+          setCurrentUser(null);
+          setHasEnteredAppState(false);
+          StorageService.setHasEnteredApp(false);
+        }
       }
       setIsAuthLoading(false);
     });
@@ -226,10 +249,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const res = await signInWithGoogle();
       setCurrentUser(res.user);
+      StorageService.saveUser(res.user);
       if (res.user.role) {
         setUserRoleState(res.user.role);
         StorageService.saveUserRole(res.user.role);
       }
+      // On login, allow entry directly without using the login page again
+      setHasEnteredApp(true);
+      setActiveTab('dashboard');
     } finally {
       setIsAuthLoading(false);
     }
@@ -240,10 +267,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       const res = await signInWithEmailPassword(email, password, isSettingPassword);
       setCurrentUser(res.user);
+      StorageService.saveUser(res.user);
       if (res.user.role) {
         setUserRoleState(res.user.role);
         StorageService.saveUserRole(res.user.role);
       }
+      // On login, allow entry directly without using the login page again
+      setHasEnteredApp(true);
+      setActiveTab('dashboard');
     } finally {
       setIsAuthLoading(false);
     }
@@ -266,6 +297,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUserRoleState('Viewer');
     StorageService.saveUserRole('Viewer');
     setCurrentUser(guestUser);
+    StorageService.saveUser(guestUser);
     setHasEnteredApp(true);
     setActiveTab('dashboard');
     StorageService.logAction('Viewer', 'Guest Login', 'Entered as Guest Viewer (read-only mode)');
@@ -276,7 +308,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       await signOutFromFirebase();
       setCurrentUser(null);
+      StorageService.saveUser(null);
       setHasEnteredApp(false);
+      StorageService.setHasEnteredApp(false);
       setActiveTab('login');
     } finally {
       setIsAuthLoading(false);
