@@ -52,8 +52,8 @@ const AppContent: React.FC = () => {
     );
   }
 
-  // Welcome user with login page upon opening the app until logged in and role is selected
-  if (!currentUser || !hasEnteredApp) {
+  // If no user is authenticated, display the login page; once logged in, allow entry directly without using the login page again
+  if (!currentUser) {
     return (
       <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} antialiased font-sans transition-colors duration-200`}>
         <LoginPage />

@@ -54,6 +54,17 @@ function updateSyncStatus(updates: Partial<typeof currentSyncStatus>) {
   listenersList.forEach(fn => fn(currentSyncStatus));
 }
 
+// Local broadcast channel for multi-tab instantaneous synchronization
+const SYNC_BROADCAST_CHANNEL_NAME = 'kimana_cluster_sync_channel';
+let broadcastChannel: BroadcastChannel | null = null;
+if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+  try {
+    broadcastChannel = new BroadcastChannel(SYNC_BROADCAST_CHANNEL_NAME);
+  } catch (e) {
+    console.warn('BroadcastChannel not supported or restricted', e);
+  }
+}
+
 // Collections mapping
 export const CLOUD_COLLECTIONS = {
   LOCALITIES: 'localities',
@@ -234,6 +245,79 @@ export function subscribeToCloudClusterData(callbacks: ClusterDataListeners): ()
     console.warn('Metadata subscription error:', err);
   }
 
+  // Multi-tab broadcast channel listener for 0ms cross-tab propagation
+  const handleBroadcastMessage = (event: MessageEvent) => {
+    const data = event.data;
+    if (!data || data.type !== 'COLLECTION_SYNC') return;
+    const { collectionKey, items, timestamp } = data;
+    switch (collectionKey) {
+      case CLOUD_COLLECTIONS.LOCALITIES:
+        StorageService.saveLocalities(items);
+        callbacks.onLocalitiesChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.PEOPLE:
+        StorageService.savePeople(items);
+        callbacks.onPeopleChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.ACTIVITIES:
+        StorageService.saveActivities(items);
+        callbacks.onActivitiesChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.STUDY_CIRCLES:
+        StorageService.saveStudyCircles(items);
+        callbacks.onStudyCirclesChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.CHILDREN_CLASSES:
+        StorageService.saveChildrenClasses(items);
+        callbacks.onChildrenClassesChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.JUNIOR_YOUTH_GROUPS:
+        StorageService.saveJuniorYouthGroups(items);
+        callbacks.onJuniorYouthGroupsChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.DEVOTIONALS:
+        StorageService.saveDevotionals(items);
+        callbacks.onDevotionalsChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.HOME_VISITS:
+        StorageService.saveHomeVisits(items);
+        callbacks.onHomeVisitsChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.SERVICE_VISITS:
+        StorageService.saveServiceVisits(items);
+        callbacks.onServiceVisitsChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.NEW_BAHAIS:
+        StorageService.saveNewBahais(items);
+        callbacks.onNewBahaisChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.FOLLOW_UPS:
+        StorageService.saveFollowUps(items);
+        callbacks.onFollowUpsChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.CYCLES:
+        StorageService.saveCycles(items);
+        callbacks.onCyclesChange?.(items);
+        break;
+      case CLOUD_COLLECTIONS.AUDIT_LOGS:
+        StorageService.saveAuditLogs(items);
+        callbacks.onAuditLogsChange?.(items);
+        break;
+    }
+    updateSyncStatus({
+      isSyncing: false,
+      lastSyncedAt: timestamp || new Date().toISOString(),
+      error: null
+    });
+  };
+
+  if (broadcastChannel) {
+    broadcastChannel.addEventListener('message', handleBroadcastMessage);
+    unsubscribers.push(() => {
+      broadcastChannel?.removeEventListener('message', handleBroadcastMessage);
+    });
+  }
+
   return () => {
     unsubscribers.forEach(unsub => unsub());
   };
@@ -250,6 +334,21 @@ export async function pushClusterCollectionToCloud<T>(
 ): Promise<void> {
   const timestamp = new Date().toISOString();
   updateSyncStatus({ isSyncing: true, error: null });
+
+  // 1. Instantaneous local cross-tab sync (0ms)
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({
+        type: 'COLLECTION_SYNC',
+        collectionKey,
+        items,
+        timestamp,
+        updatedBy: userEmail || 'anonymous'
+      });
+    } catch (bcErr) {
+      console.warn('BroadcastChannel sync error:', bcErr);
+    }
+  }
 
   try {
     const docRef = doc(db, 'clusterData', collectionKey);
