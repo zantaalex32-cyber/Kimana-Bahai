@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import logoImage from '../../assets/images/kimana_cluster_logo_1791234439143.jpg';
+import logoImage from '../../assets/images/kimana_cluster_logo_1792154698520.jpg';
 
 interface AppLogoProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -30,58 +30,39 @@ export const AppLogo: React.FC<AppLogoProps> = ({
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       {/* Emblem / Logo Icon */}
-      <div className={`relative flex items-center justify-center shrink-0 ${sizeDimensions.box} rounded-2xl overflow-hidden shadow-sm border border-emerald-500/20 bg-gradient-to-tr from-emerald-900 via-teal-950 to-slate-900 group`}>
+      <div className={`relative flex items-center justify-center shrink-0 ${sizeDimensions.box} rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 group`}>
         {!imageError ? (
           <img 
             src={logoImage} 
-            alt="Kimana Cluster Logo" 
+            alt="Kimana Cluster Tracker Logo" 
+            referrerPolicy="no-referrer"
             onError={() => setImageError(true)}
-            className={`${sizeDimensions.img} object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105`}
+            className={`${sizeDimensions.img} object-contain rounded-2xl transition-transform duration-300 group-hover:scale-105`}
           />
         ) : (
-          /* High-fidelity Vector SVG Fallback with 9-pointed Star & Kilimanjaro Emblem */
+          /* High-fidelity Vector SVG Fallback of the Circular Wheel Logo */
           <svg 
             viewBox="0 0 100 100" 
             className="w-full h-full p-1"
             fill="none" 
             xmlns="http://www.w3.org/2000/svg"
           >
-            <defs>
-              <linearGradient id="skyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#0f172a" />
-                <stop offset="60%" stopColor="#064e3b" />
-                <stop offset="100%" stopColor="#d97706" />
-              </linearGradient>
-              <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#fef08a" />
-                <stop offset="50%" stopColor="#f59e0b" />
-                <stop offset="100%" stopColor="#b45309" />
-              </linearGradient>
-            </defs>
-            <rect width="100" height="100" rx="20" fill="url(#skyGrad)" />
-            {/* Sunrise Rays */}
-            <path d="M50 48 L15 15 M50 48 L50 8 M50 48 L85 15 M50 48 L92 35 M50 48 L8 35" stroke="#fef08a" strokeWidth="1" strokeOpacity="0.4" />
-            
-            {/* Mount Kilimanjaro Silhouette */}
-            <path d="M12 88 L38 52 L52 50 L64 54 L88 88 Z" fill="#042f2e" />
-            {/* Snow Cap */}
-            <path d="M42 51 L48 49 L54 50 L58 52 L60 56 L55 58 L52 55 L48 57 L44 55 Z" fill="#ffffff" fillOpacity="0.9" />
-            <path d="M26 88 L46 64 L56 65 L76 88 Z" fill="#064e3b" fillOpacity="0.6" />
+            <rect width="100" height="100" rx="20" fill="#f8fafc" />
+            <g transform="translate(50, 50)">
+              {/* Outer Colorful Ring Sectors */}
+              <path d="M 0 -36 A 36 36 0 0 1 31.18 -18 L 20.78 -12 A 24 24 0 0 0 0 -24 Z" fill="#6339a8" />
+              <path d="M 31.18 -18 A 36 36 0 0 1 31.18 18 L 20.78 12 A 24 24 0 0 0 20.78 -12 Z" fill="#8bc34a" />
+              <path d="M 31.18 18 A 36 36 0 0 1 0 36 L 0 24 A 24 24 0 0 0 20.78 12 Z" fill="#e53935" />
+              <path d="M 0 36 A 36 36 0 0 1 -31.18 18 L -20.78 12 A 24 24 0 0 0 0 24 Z" fill="#fb8c00" />
+              <path d="M -31.18 18 A 36 36 0 0 1 -31.18 -18 L -20.78 -12 A 24 24 0 0 0 -20.78 12 Z" fill="#fbc02d" />
+              <path d="M -31.18 -18 A 36 36 0 0 1 0 -36 L 0 -24 A 24 24 0 0 0 -20.78 -12 Z" fill="#42a5f5" />
 
-            {/* Radiant Nine-Pointed Bahá'í Star */}
-            <g transform="translate(50, 32) scale(1.1)">
-              {Array.from({ length: 9 }).map((_, i) => {
-                const angle = (i * 360) / 9;
-                return (
-                  <path
-                    key={i}
-                    d="M 0 -16 L 3.5 -5 L 0 0 L -3.5 -5 Z"
-                    fill="url(#goldGrad)"
-                    transform={`rotate(${angle})`}
-                  />
-                );
-              })}
-              <circle cx="0" cy="0" r="3.5" fill="#fef08a" />
+              {/* White Circular Donut Ring */}
+              <circle cx="0" cy="0" r="23" fill="#ffffff" />
+
+              {/* Center Red Disc and Down-Right Stem */}
+              <rect x="5" y="5" width="10" height="24" rx="3" fill="#e53935" transform="rotate(-45 10 17)" />
+              <circle cx="0" cy="0" r="14" fill="#e53935" />
             </g>
           </svg>
         )}
